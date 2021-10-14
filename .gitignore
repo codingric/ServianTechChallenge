@@ -1,24 +1,24 @@
 # Binaries for programs and plugins
-*.exe
-*.dll
-*.so
-*.dylib
+*/*.exe
+*/*.dll
+*/*.so
+*/*.dylib
 .DS_Store
 
 # Test binary, build with `go test -c`
-*.test
+*/*.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+*/*.out
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
-.glide/
+*/.glide/
 
 # Build distribution folder
-dist/
+*/dist/
 
 # Vendor folder
-/vendor
+*/vendor
 
 # Output Binary
-TechChallengeApp
+*/TechChallengeApp

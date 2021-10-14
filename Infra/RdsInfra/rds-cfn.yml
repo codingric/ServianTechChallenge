@@ -1,0 +1,274 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Postgres CFN template
+Conditions:
+  IsReadReplica: !Equals [!Ref readrep, true]
+  #KMSdefault: !Equals [ !Ref DBKMSEncryption, default ]
+  #NoKMS: !Equals [ !Ref DBKMSEncryption, none ]
+  HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, ""]]
+
+Parameters:
+  DbPort:
+    Type: String
+  DBEngineVersion:
+    Type: String
+  readrep:
+    Type: String
+  EnablePerformanceInsights:
+    Type: String
+  DBSnapshotIdentifier:
+    Type: String
+  Application:
+    Type: String
+  EnvPrefix:
+    Type: String
+  DBStorageType:
+    Type: String
+  DBInstanceIdentifier:
+    Type: String
+  DBSid:
+    Type: String
+    Description: Limited to 8 characters
+  DBAllocatedStorage:
+    Type: Number
+  DBUser:
+    Type: String
+  #DBPassword:
+  # NoEcho: true
+  #Type: String
+  DBInstanceClass:
+    Type: String
+  PerformanceInsightsRetention:
+    Type: Number
+  DBBackupRetention:
+    Type: Number
+    Description: Number of days to retain the daily automated snapshots.
+    Default: 7
+  #DBKMSEncryption:
+  #  Type: String
+  MultiAZ:
+    Type: String
+
+  # DBInstanceClassRW:
+  #   Type: String
+
+Resources:
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS Security group for inbound DB access
+      VpcId:
+        Fn::ImportValue:
+          Fn::Join:
+            - ""
+            - - !Ref EnvPrefix
+              - "-"
+              - VpcID
+      SecurityGroupEgress:
+        - IpProtocol: icmp
+          FromPort: "-1"
+          ToPort: "-1"
+          CidrIp: 127.0.0.1/32
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvPrefix}${DBSid}DBSecurityGroup"
+
+  IngressRuleDBConnection:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      IpProtocol: tcp
+      FromPort: !Ref DbPort
+      ToPort: !Ref DbPort
+      CidrIp: 0.0.0.0/0
+      GroupId: !Ref DBSecurityGroup
+      Description: default inbound rule set from parameters
+
+  DatabaseInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      EngineVersion:
+        !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBEngineVersion]
+
+      DBInstanceIdentifier: !Ref DBInstanceIdentifier
+      DBName: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBSid]
+      MultiAZ: !Ref MultiAZ
+      EnablePerformanceInsights: !Ref EnablePerformanceInsights
+      # PerformanceInsightsKMSKeyId: !Ref KMS
+      # PerformanceInsightsRetentionPeriod: !Ref PerformanceInsightsRetention
+      MasterUsername:
+        !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBUser]
+      MasterUserPassword:
+        !If [
+          HasDBSnapshotIdentifier,
+          !Ref "AWS::NoValue",
+          {% raw %}!Sub "{{resolve:secretsmanager:${DatabaseMasterSecret}:SecretString:password}}",{% endraw %}
+        ]
+      DBSnapshotIdentifier:
+        !If [
+          HasDBSnapshotIdentifier,
+          !Ref DBSnapshotIdentifier,
+          !Ref "AWS::NoValue",
+        ]
+      PubliclyAccessible: true
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      StorageType: !Ref DBStorageType
+      # OptionGroupName:
+      DBParameterGroupName: !Ref ParameterGroup
+      VPCSecurityGroups:
+        - !GetAtt [DBSecurityGroup, GroupId]
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      BackupRetentionPeriod: !Ref DBBackupRetention
+      PreferredBackupWindow: 14:00-14:30
+      # KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref KMS]
+      StorageEncrypted: "false"
+      CopyTagsToSnapshot: "true"
+      AutoMinorVersionUpgrade: "true"
+      PreferredMaintenanceWindow: mon:13:00-mon:13:30
+      LicenseModel: postgresql-license
+
+  ParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: "Parameters of the DB Instance"
+      Family: "postgres9.6"
+      Parameters:
+        shared_preload_libraries: pg_stat_statements,pgaudit
+
+  # ReadReplica:
+  #   Type: AWS::RDS::DBInstance
+  #   Condition: IsReadReplica
+  #   DependsOn: DatabaseInstance
+  #   Properties:
+  #     SourceDBInstanceIdentifier: !Ref DBInstanceIdentifier
+  #     VPCSecurityGroups:
+  #       - !GetAtt [DBSecurityGroup, GroupId]
+  #     DBInstanceIdentifier: !Sub "${DBInstanceIdentifier}2"
+
+  DatabaseMasterSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: !Sub "${EnvPrefix} ${AWS::StackName} DB master password"
+      GenerateSecretString:
+        ExcludePunctuation: true
+        SecretStringTemplate: !Sub '{"username": "${DBUser}"}'
+        GenerateStringKey: "password"
+      KmsKeyId: !Ref KMS
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvPrefix}${DBSid}MasterPassword"
+      # - Key: "secretsmanager:resourceTag"
+      #   Value: "DBA Team"
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription:
+        Fn::Join:
+          - ""
+          - - "DB Subnet Group for "
+            - !Ref Application
+            - "-"
+            - !Ref EnvPrefix
+      SubnetIds:
+{% for PrivateSubnet in PrivateSubnets %}
+        - Fn::ImportValue:
+            Fn::Join:
+              - ""
+              - - !Ref EnvPrefix
+                - {{ PrivateSubnet }}
+{% endfor %}
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Join:
+              - ""
+              - - Ref: Application
+                - "-DBSubnetGroup"
+
+
+  DatabaseUrlAll:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Database URL in standard format
+      Name: !Sub "/database/${EnvPrefix}/${DBSid}/db-url-all"
+      Type: String
+      Value: !Sub "postgresql://${DatabaseInstance.Endpoint.Address}:${DatabaseInstance.Endpoint.Port}/${DBSid}"
+
+  DatabaseUrlReadWrite:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Database URL in standard format - read only node
+      Name: !Sub "/database/${EnvPrefix}/${DBSid}/db-url-rw"
+      Type: String
+      Value: !Sub "postgresql://${DatabaseInstance.Endpoint.Address}:${DatabaseInstance.Endpoint.Port}/${DBSid}"
+
+  DatabaseSecurityGroupSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: !Sub "Database SecurityGroup for ${DBSid}"
+      Name: !Sub "Database${EnvPrefix}${DBSid}DB-sg"
+      Type: String
+      Value: !Ref DBSecurityGroup
+
+  KMS:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "${AWS::StackName} KMS Key"
+      EnableKeyRotation: false
+      Enabled: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "key-default-1"
+        Statement:
+          - Sid: "Enable IAM User Permissions"
+            Effect: "Allow"
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # - !Sub "arn:aws:iam::174550113169:root"
+            Action: "kms:*"
+            Resource: "*"
+      KeyUsage: ENCRYPT_DECRYPT
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  KMSAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}"
+      TargetKeyId: !Ref KMS
+
+  ## ====== Outputs ======
+
+Outputs:
+  DbEndpoint:
+    Value: !GetAtt "DatabaseInstance.Endpoint.Address"
+    Export:
+      Name: !Sub "${EnvPrefix}:${DBSid}:db-endpoint"
+
+  #  DbEndpointReadOnly:
+  #    Value: !GetAtt "DatabaseInstance.ReadEndpoint.Address"
+  #    Export:
+  #      Name: !Sub "${EnvPrefix}:${DBSid}:db-endpoint-ro"
+
+  DatabaseMasterSecret:
+    Value: !Ref DatabaseMasterSecret
+    Export:
+      Name: !Sub "${EnvPrefix}:${DBSid}:db-master-secret"
+
+  DatabaseUrlParamAll:
+    Value: !Ref DatabaseUrlAll
+    Export:
+      Name: !Sub "${EnvPrefix}:${DBSid}::db-url-all-param"
+
+  DatabaseUrlReadWriteParameter:
+    Value: !Ref DatabaseUrlReadWrite
+    Export:
+      Name: !Sub "${EnvPrefix}:${DBSid}:db-url-rw-param"
+
+  #DatabaseUrlReadOnlyParameter:
+  #  Value: !Ref DatabaseUrlReadOnly
+  #  Export:
+  #    Name: !Sub "${EnvPrefix}:${DBSid}:db-url-ro-param"

@@ -1,0 +1,24 @@
+VpcCidrBlock: "10.0.0.0/16"
+
+
+PrivateSubnets:
+  - az: ap-southeast-2a
+    CidrBlock: "10.0.1.0/24"
+    name: PrivateSubnetA
+  - az: ap-southeast-2b
+    CidrBlock: "10.0.2.0/24"
+    name: PrivateSubnetB
+  - az: ap-southeast-2c
+    CidrBlock: "10.0.3.0/24"
+    name: PrivateSubnetC
+
+PublicSubnets:
+  - az: ap-southeast-2a
+    CidrBlock: "10.0.4.0/24"
+    name: PublicSubnetA
+  - az: ap-southeast-2b
+    CidrBlock: "10.0.5.0/24"
+    name: PublicSubnetB
+  - az: ap-southeast-2c
+    CidrBlock: "10.0.6.0/24"
+    name: PublicSubnetC

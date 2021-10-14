@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys the HTTP gateway in API-GW Account.
+
+Conditions:
+  IsProd: !Equals [!Ref EnvPrefix, prod]
+
+Parameters:
+  EnvPrefix:
+    Type: String
+    Description: Cochlear environment.
+    AllowedValues:
+      - non-prod
+      - prod
+
+  VpcCidrBlock:
+    Type: String
+  
+
+
+Resources:
+  EnvVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvPrefix}-Vpc"
+
+  EnvInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: stack
+        Value: !Sub "${EnvPrefix}-Vpc"
+
+  VpcIgWAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref EnvInternetGateway
+      VpcId: !Ref EnvVpc
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-southeast-2a
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - PrivateSubnetA
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-southeast-2b
+      CidrBlock: 10.0.2.0/24
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - PrivateSubnetB
+
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-southeast-2c
+      CidrBlock: 10.0.3.0/24
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - PrivateSubnetC
+
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-southeast-2a
+      CidrBlock: 10.0.4.0/24
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - PublicSubnetA
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-southeast-2b
+      CidrBlock: 10.0.5.0/24
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - PublicSubnetB
+
+  PublicSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-southeast-2c
+      CidrBlock: 10.0.6.0/24
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - PublicSubnetC
+
+
+Outputs:
+  VpcID:
+    Value: !Ref EnvVpc
+    Export:
+      Name: !Sub "${EnvPrefix}-VpcID"
+
+  non-prodPrivateSubnetA:
+    Value: !Ref PrivateSubnetA
+    Export: 
+      Name: non-prodPrivateSubnetA
+
+  non-prodPrivateSubnetB:
+    Value: !Ref PrivateSubnetB
+    Export: 
+      Name: non-prodPrivateSubnetB
+
+  non-prodPrivateSubnetC:
+    Value: !Ref PrivateSubnetC
+    Export: 
+      Name: non-prodPrivateSubnetC
+
+
+  non-prodPublicSubnetA:
+    Value: !Ref PublicSubnetA
+    Export: 
+      Name: non-prodPublicSubnetA
+
+  non-prodPublicSubnetB:
+    Value: !Ref PublicSubnetB
+    Export: 
+      Name: non-prodPublicSubnetB
+
+  non-prodPublicSubnetC:
+    Value: !Ref PublicSubnetC
+    Export: 
+      Name: non-prodPublicSubnetC
+

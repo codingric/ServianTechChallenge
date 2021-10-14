@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys the HTTP gateway in API-GW Account.
+
+Conditions:
+  IsProd: !Equals [!Ref EnvPrefix, prod]
+
+Parameters:
+  EnvPrefix:
+    Type: String
+    Description: Cochlear environment.
+    AllowedValues:
+      - NonProd
+      - Prod
+
+  VpcCidrBlock:
+    Type: String
+  
+
+
+Resources:
+  EnvVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvPrefix}-Vpc"
+
+  EnvInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: stack
+        Value: !Sub "${EnvPrefix}-Vpc"
+
+  VpcIgWAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref EnvInternetGateway
+      VpcId: !Ref EnvVpc
+
+{% for PrivateSubnet in PrivateSubnets %}
+  {{ PrivateSubnet.name }}:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: {{ PrivateSubnet.az }}
+      CidrBlock: {{ PrivateSubnet.CidrBlock }}
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - {{ PrivateSubnet.name }}
+
+{% endfor %}
+
+{% for PublicSubnet in PublicSubnets %}
+  {{ PublicSubnet.name }}:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: {{ PublicSubnet.az }}
+      CidrBlock: {{ PublicSubnet.CidrBlock }}
+      VpcId: !Ref EnvVpc
+      Tags:
+        - Key: Name
+          Value: 
+            !Join 
+            - ''
+            - - !Ref EnvPrefix
+              - '-'
+              - {{ PublicSubnet.name }}
+
+{% endfor %}
+
+Outputs:
+  VpcID:
+    Value: !Ref EnvVpc
+    Export:
+      Name: !Sub "${EnvPrefix}-VpcID"
+
+{% for PrivateSubnet in PrivateSubnets %}
+  {{ EnvPrefix }}{{ PrivateSubnet.name }}:
+    Value: !Ref {{ PrivateSubnet.name }}
+    Export: 
+      Name: {{ EnvPrefix }}{{ PrivateSubnet.name }}
+
+{% endfor %}
+
+{% for PublicSubnet in PublicSubnets %}
+  {{ EnvPrefix }}{{ PublicSubnet.name }}:
+    Value: !Ref {{ PublicSubnet.name }}
+    Export: 
+      Name: {{ EnvPrefix }}{{ PublicSubnet.name }}
+
+{% endfor %}
