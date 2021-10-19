@@ -101,11 +101,11 @@
       shell: "{{ 'aws cloudformation execute-change-set --change-set-name ' + cf_changeset_name + ' --stack-name ' + cf_stack_name }}"
       when: cfn_facts is changed
 
-    - name: Poll cloudformation until its in a steady state
-      cloudformation_info:
-        stack_name: "{{ cf_stack_name }}"
-      register: cfn_facts
-      retries: "50"
-      delay: "5"
-      until: cfn_facts['cloudformation'][cf_stack_name]['stack_description']['stack_status'] in ["UPDATE_COMPLETE","CREATE_COMPLETE","ROLLBACK_COMPLETE","UPDATE_ROLLBACK_COMPLETE","DELETE_COMPLETE"]
-      when: cfn_facts is changed
+    # - name: Poll cloudformation until its in a steady state
+    #   cloudformation_info:
+    #     stack_name: "{{ cf_stack_name }}"
+    #   register: cfn_facts
+    #   retries: "50"
+    #   delay: "5"
+    #   until: cfn_facts['cloudformation'][cf_stack_name]['stack_description']['stack_status'] in ["UPDATE_COMPLETE","CREATE_COMPLETE","ROLLBACK_COMPLETE","UPDATE_ROLLBACK_COMPLETE","DELETE_COMPLETE"]
+    #   when: cfn_facts is changed
