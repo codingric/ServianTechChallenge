@@ -14,7 +14,7 @@ DbPort: 5432
 #ECS loggrooup retention period
 LogRetentionDays: 30
 #The number of fargate ECS Tasks that must exists
-MinConCount: 2
+MinConCount: 3
 #The max number of fargate ECS Tasks that can exists
 MaxConCount: 5
 #the certificate ARN from Certificate Manager, which must exist in the same region.
