@@ -55,7 +55,7 @@
       cloudformation:
         stack_name: "{{ cf_stack_name }}"
         state: "present"
-        create_changeset: "yes"
+        create_changeset: "no"
         template: template/{{ EnvPrefix }}-app-cfn.yml
         changeset_name: "{{ cf_changeset_name }}"
         template_parameters:
@@ -74,32 +74,32 @@
       # tags:
       #   - keyRotation
 
-    - name: Safe Mode | Get details about each change
-      shell: "{{ 'aws cloudformation describe-change-set --change-set-name ' + cf_changeset_name + ' --stack-name ' + cf_stack_name }}"
-      register: aws_cfnsget_cs_result
-      when: cfn_facts is changed
+    # - name: Safe Mode | Get details about each change
+    #   shell: "{{ 'aws cloudformation describe-change-set --change-set-name ' + cf_changeset_name + ' --stack-name ' + cf_stack_name }}"
+    #   register: aws_cfnsget_cs_result
+    #   when: cfn_facts is changed
 
-    - name: Safe Mode | Show changeset changes
-      debug:
-        msg: |
-          The changes CloudFormation will make:
-          {{ (aws_cfnsget_cs_result.stdout | from_json)['Changes'] | to_yaml }}"
-      when: cfn_facts is changed
+    # - name: Safe Mode | Show changeset changes
+    #   debug:
+    #     msg: |
+    #       The changes CloudFormation will make:
+    #       {{ (aws_cfnsget_cs_result.stdout | from_json)['Changes'] | to_yaml }}"
+    #   when: cfn_facts is changed
 
-    - name: Safe Mode | Review Template Differences and press 'C' and return to Continue or 'A' and return to abort
-      pause:
-        echo: yes
-      register: aws_cfnspause_result
-      when: cfn_facts is changed
+    # - name: Safe Mode | Review Template Differences and press 'C' and return to Continue or 'A' and return to abort
+    #   pause:
+    #     echo: yes
+    #   register: aws_cfnspause_result
+    #   when: cfn_facts is changed
 
-    # - name: Safe Mode | Fail if aborted
-    #   fail:
-    #     msg: "Interrupted..."
-    #   when: aws_cfnspause_result.user_input | d('') | lower is search('a')
+    # # - name: Safe Mode | Fail if aborted
+    # #   fail:
+    # #     msg: "Interrupted..."
+    # #   when: aws_cfnspause_result.user_input | d('') | lower is search('a')
 
-    - name: Safe Mode | Execute Change sets
-      shell: "{{ 'aws cloudformation execute-change-set --change-set-name ' + cf_changeset_name + ' --stack-name ' + cf_stack_name }}"
-      when: cfn_facts is changed
+    # - name: Safe Mode | Execute Change sets
+    #   shell: "{{ 'aws cloudformation execute-change-set --change-set-name ' + cf_changeset_name + ' --stack-name ' + cf_stack_name }}"
+    #   when: cfn_facts is changed
 
     # - name: Poll cloudformation until its in a steady state
     #   cloudformation_info:
