@@ -42,6 +42,75 @@ Resources:
       InternetGatewayId: !Ref EnvInternetGateway
       VpcId: !Ref EnvVpc
 
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref EnvVpc
+      Tags:
+      - Key: Name
+        Value: !Sub "${EnvPrefix}-PublicRoute"
+
+{% for PublicSubnet in PublicSubnets %}
+  {{ PublicSubnet.name }}Route:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref {{ PublicSubnet.name }}
+
+{% endfor %}
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: EnvInternetGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref EnvInternetGateway
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref EnvVpc
+      Tags:
+      - Key: Name
+        Value: !Sub "${EnvPrefix}-PrivatecRoute"
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    DependsOn: EnvInternetGateway
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateWay
+
+{% for PrivateSubnet in PrivateSubnets %}
+  {{ PrivateSubnet.name }}Route:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref {{ PrivateSubnet.name }}
+
+{% endfor %}
+
+  NatEIP:
+    DependsOn: EnvInternetGateway
+    Type: AWS::EC2::EIP
+    Properties:
+        Domain: vpc
+
+  NATGateWay:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId:
+        Ref: PublicSubnetA
+      Tags:
+      - Key: Name
+        Value: !Sub "${EnvPrefix}-NatGateway"
+
+
+
 {% for PrivateSubnet in PrivateSubnets %}
   {{ PrivateSubnet.name }}:
     Type: AWS::EC2::Subnet

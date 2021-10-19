@@ -24,16 +24,20 @@ COPY . .
 
 RUN CGO_ENABLED="0" go build -ldflags="-s -w" -a -o /TechChallengeApp
 RUN swagger generate spec -o /swagger.json \
- && cp /swagger.json ui/assets/swagger/ \
- && cp -R /tmp/swagger/dist ui/assets/swagger
+    && cp /swagger.json ui/assets/swagger/ \
+    && cp -R /tmp/swagger/dist ui/assets/swagger
 
 RUN cd ui && rice append --exec /TechChallengeApp
 
 FROM alpine:latest
 
+RUN apk add --no-cache jq
+
 WORKDIR /TechChallengeApp
 
 COPY conf.toml ./conf.toml
 COPY --from=build /TechChallengeApp TechChallengeApp
-
-ENTRYPOINT [ "./TechChallengeApp" ]
+COPY run_app.sh ./run_app.sh
+# ENTRYPOINT [ "./TechChallengeApp" ]
+ENTRYPOINT [ "./run_app.sh" ]
+# CMD [ "export VTT_DBPASSWORD2=(`echo $VTT_DBPASSWORD| jq .password |xargs`)", "echo $VTT_DBPASSWORD2" ]

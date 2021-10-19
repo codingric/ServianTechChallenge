@@ -1,0 +1,390 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Servian test app CFN template
+
+Parameters:
+
+  AutoScalingTargetValue:
+    Type: Number
+
+  DbSecretsArnSSM:
+    Type: AWS::SSM::Parameter::Value<String>
+
+  ALBAccessLogs:
+    Type: String
+    Default: false
+
+  S3AccesslogsBucket: 
+    Type: String
+
+  EnvPrefix:
+    Type: String
+
+  LogRetentionDays:
+    Type: String
+    Default: 30
+
+  LoadBalancerPort:
+    Type: Number
+    Default: 443
+
+  HostedZoneName:
+    Type: String
+    Default: "mynextidea.com"
+
+  Application:
+    Type: String
+
+  DockerImage:
+    Type: String
+
+  Certificate:
+    Type: String
+    #the certificate ARN from Certificate Manager, which must exist in the same region.
+
+  MaxConCount:
+    Type: Number
+
+  MinConCount:
+    Type: Number
+    Default: 1
+  # DBInstanceClassRW:
+  #   Type: String
+
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}-Cluster"
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    # DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Join ["", [!Ref "AWS::StackName", /container-logs]]
+      RetentionInDays: !Ref LogRetentionDays
+
+
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: secrets_inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub "arn:aws:secretsmanager:ap-southeast-2:852998739144:secret:nonprod-serviantestapp-rds-password-wZwQf3"
+        - PolicyName: fetch_secrets_inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - secretsmanager:ListSecrets
+                Resource: "*"
+        - PolicyName: kms_inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - kms:Decrypt
+                Resource: "*"
+        - PolicyName: cloudwatchLog_inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - logs:PutMetricFilter
+                  - logs:CreateLogStream
+                  - logs:PutResourcePolicy
+                  - logs:PutDestinationPolicy
+                  - logs:PutSubscriptionFilter
+                  - logs:PutRetentionPolicy
+                  - logs:PutDestination
+                  - logs:PutLogEvents
+                Resource: "*"
+      RoleName: !Sub "${AWS::StackName}-ECSTaskRole"
+
+  ECSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: kms_inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - kms:Decrypt
+                Resource: "*"
+        - PolicyName: secrets_inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref DbSecretsArnSSM
+        - PolicyName: cloudwatchLog_inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - logs:PutMetricFilter
+                  - logs:CreateLogStream
+                  - logs:PutResourcePolicy
+                  - logs:PutDestinationPolicy
+                  - logs:PutSubscriptionFilter
+                  - logs:PutRetentionPolicy
+                  - logs:PutDestination
+                  - logs:PutLogEvents
+                Resource: "*"
+      RoleName: !Sub "${AWS::StackName}-ECSIAMRole"
+
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for ECS tasks
+      VpcId:
+        Fn::ImportValue:
+          Fn::Join:
+            - ""
+            - - !Ref EnvPrefix
+              - "-"
+              - VpcID
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvPrefix}EcsSg"
+
+  IngressRuleDBConnection:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      IpProtocol: tcp
+      FromPort: 8010
+      ToPort: 8010
+      SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+      GroupId: !Ref ECSSecurityGroup
+      Description: default inbound rule set from parameters
+
+  ServiceDefinition:
+    Type: AWS::ECS::Service
+    #Dependency added because LB creation takes time
+    DependsOn:
+      - ListenerHTTPS
+    Properties:
+      Cluster: !Ref ECSCluster
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 50
+      DeploymentController:
+        Type: ECS
+      DesiredCount: !Ref MinConCount
+      EnableECSManagedTags: true
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      SchedulingStrategy: REPLICA
+      ServiceName: !Sub "${AWS::StackName}-service"
+      TaskDefinition: !Ref TaskDefinition
+      LoadBalancers:
+        - ContainerName: !Sub "${AWS::StackName}-ecs"
+          ContainerPort: 8010
+          TargetGroupArn: !Ref TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups: 
+            - !Ref ECSSecurityGroup
+          Subnets: 
+{% for PrivateSubnet in PrivateSubnets %}
+            - Fn::ImportValue:
+                Fn::Join:
+                  - ""
+                  - - !Ref EnvPrefix
+                    - {{ PrivateSubnet }}
+{% endfor %}
+
+
+  TaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - "FARGATE"
+      Cpu: "256"
+      Memory: "512"
+      # "the execution role is the IAM role that executes ECS actions such as pulling the image and storing the application logs in cloudwatch.
+      ExecutionRoleArn: !Ref ECSRole
+      # "IAM) role that grants containers in the task permission to call AWS APIs on your behalf."
+      TaskRoleArn: !Ref ECSTaskRole
+      ContainerDefinitions:
+        - Name: !Sub "${AWS::StackName}-ecs"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${DockerImage}:latest"
+          Image: 852998739144.dkr.ecr.ap-southeast-2.amazonaws.com/nonprod-serviantestapp
+          Command:
+            - serve
+          PortMappings:
+            - ContainerPort: 8010
+          Essential: true
+          StopTimeout: 120
+          WorkingDirectory: "/TechChallengeApp"
+          Secrets:
+            - Name: DBPASSWORD
+              ValueFrom: !Ref DbSecretsArnSSM
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+              awslogs-multiline-pattern: '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}|^{"category":"nz.co.airnz'
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      # will look for a 200 status code by default unless specified otherwise
+      HealthCheckPath: /healthcheck
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      HealthyThresholdCount: 2
+      Name: !Join ['', [!Sub "${AWS::StackName}", TG]]
+      Port: 8010
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 60 # default is 300
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue:
+          Fn::Join:
+            - ""
+            - - !Ref EnvPrefix
+              - "-"
+              - VpcID
+
+  ListenerHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: !Ref LoadBalancerPort
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref Certificate
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        # this is the default, but is specified here in case it needs to be changed
+        - Key: idle_timeout.timeout_seconds
+          Value: 60
+        # - Key: access_logs.s3.enabled 
+        #   Value: !Ref ALBAccessLogs
+        # - Key: access_logs.s3.bucket
+        #   Value: !Ref S3AccesslogsBucket
+        # - Key: access_logs.s3.prefix
+        #   Value: !Sub "${EnvPrefix}-${Application}"
+      Name: !Join ['', [!Sub "${AWS::StackName}", LB]]
+      # "internal" is also an option
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+      Subnets:
+{% for PublicSubnet in PublicSubnets %}
+        - Fn::ImportValue:
+            Fn::Join:
+              - ""
+              - - !Ref EnvPrefix
+                - {{ PublicSubnet }}
+{% endfor %}
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join ['', [!Sub "${AWS::StackName}", LbSg]]
+      VpcId:
+        Fn::ImportValue:
+          Fn::Join:
+            - ""
+            - - !Ref EnvPrefix
+              - "-"
+              - VpcID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref LoadBalancerPort
+          ToPort: !Ref LoadBalancerPort
+          CidrIp: 0.0.0.0/0
+  
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join ['', [!Ref HostedZoneName, .]]
+      Name: !Join ['', [testapp, ., !Ref HostedZoneName, .]]
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt LoadBalancer.DNSName
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+
+
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: !Ref MinConCount
+      MaxCapacity: !Ref MaxConCount
+      ResourceId: !Join ['/', [service, !Ref ECSCluster, !GetAtt ServiceDefinition.Name]]
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      # "The Amazon Resource Name (ARN) of an AWS Identity and Access Management (IAM) role that allows Application Auto Scaling to modify your scalable target."
+      RoleARN: !GetAtt AutoScalingRole.Arn
+
+  AutoScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Join ['', [!Ref ServiceDefinition, AutoScalingPolicy]]
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleInCooldown: 30
+        ScaleOutCooldown: 30
+        # Keep things at or lower than 50% CPU utilization, for example
+        TargetValue: !Ref AutoScalingTargetValue
+
+  AutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${EnvPrefix}-${Application}-AutoScalingRole"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'

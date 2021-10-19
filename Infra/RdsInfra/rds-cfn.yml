@@ -48,8 +48,8 @@ Parameters:
   MultiAZ:
     Type: String
 
-  # DBInstanceClassRW:
-  #   Type: String
+  DbSecretsArnSSM:
+    Type: String
 
 Resources:
   DBSecurityGroup:
@@ -78,7 +78,7 @@ Resources:
       IpProtocol: tcp
       FromPort: !Ref DbPort
       ToPort: !Ref DbPort
-      CidrIp: 0.0.0.0/0
+      CidrIp: 10.0.0.0/8
       GroupId: !Ref DBSecurityGroup
       Description: default inbound rule set from parameters
 
@@ -109,7 +109,7 @@ Resources:
           !Ref DBSnapshotIdentifier,
           !Ref "AWS::NoValue",
         ]
-      PubliclyAccessible: true
+      PubliclyAccessible: false
       DBInstanceClass: !Ref DBInstanceClass
       AllocatedStorage: !Ref DBAllocatedStorage
       StorageType: !Ref DBStorageType
@@ -153,12 +153,11 @@ Resources:
         ExcludePunctuation: true
         SecretStringTemplate: !Sub '{"username": "${DBUser}"}'
         GenerateStringKey: "password"
+      Name: !Sub "${AWS::StackName}-password"
       KmsKeyId: !Ref KMS
       Tags:
         - Key: Name
           Value: !Sub "${EnvPrefix}${DBSid}MasterPassword"
-      # - Key: "secretsmanager:resourceTag"
-      #   Value: "DBA Team"
 
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -210,6 +209,14 @@ Resources:
       Name: !Sub "Database${EnvPrefix}${DBSid}DB-sg"
       Type: String
       Value: !Ref DBSecurityGroup
+
+  SecretsArnSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: !Sub "Secretsmanager ARN for ${EnvPrefix}${DBSid}"
+      Name: !Ref DbSecretsArnSSM
+      Type: String
+      Value: !Ref DatabaseMasterSecret
 
   KMS:
     Type: AWS::KMS::Key

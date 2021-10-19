@@ -1,0 +1,25 @@
+# VpcId: "10.0.0.0/16"
+Application: ServiantestApp
+#Private Subnets where ECS tasks are running
+PrivateSubnets:
+  - PrivateSubnetA
+  - PrivateSubnetB
+  - PrivateSubnetC
+#The Public subnets where ALB is deployed to
+PublicSubnets:
+  - PublicSubnetA
+  - PublicSubnetB
+#Database port to connect to RDS
+DbPort: 5432
+#ECS loggrooup retention period
+LogRetentionDays: 30
+#The number of fargate ECS Tasks that must exists
+MinConCount: 2
+#The max number of fargate ECS Tasks that can exists
+MaxConCount: 5
+#the certificate ARN from Certificate Manager, which must exist in the same region.
+Certificate: arn:aws:acm:ap-southeast-2:852998739144:certificate/5ebf0f7e-0a0a-4c8c-a46a-61c3bff24a54
+#The max CPU utilization before scalling event can occur.
+AutoScalingTargetValue: 50
+#ALB Access logs enable/disable
+ALBAccessLogs: "false"

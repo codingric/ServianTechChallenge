@@ -1,4 +1,4 @@
-- name: playbook to deploy rds resources.
+- name: playbook to deploy app resources.
   hosts: localhost
   connection: local
   gather_facts: false
@@ -6,7 +6,7 @@
   vars:
     local_repository: "{{ playbook_dir }}"
     ArtifactsBucket: nehamits-artifacts-bucket
-    cf_stack_name: "{{ EnvPrefix | lower }}-{{ Application | lower }}-rds"
+    cf_stack_name: "{{ EnvPrefix | lower }}-{{ Application | lower }}-app"
     # ApiRoutkeys:
     #   - ProjectAccountRoute: /bye
     #     ApiGwAccountRoute: /v1/bye
@@ -41,55 +41,34 @@
 
     - name: Generate jinja YAML template
       template:
-        src: rds-cfn.yml
-        dest: template/{{ EnvPrefix }}-rds-cfn.yml
+        src: app-cfn.yml
+        dest: template/{{ EnvPrefix }}-app-cfn.yml
 
-    # - name: Copy KeyRotation lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/KeyRotationcode"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Copy WafRule update lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/WafRuleUpdatecode"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Copy Cloudfront distribution update lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/KeyRotationcode-phase2"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Copy key rollback lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/KeyRollbackFunction"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Package Cloud Formation templates that contain LambdaFunction.
-    #   shell: "aws cloudformation package --template-file template/{{ EnvPrefix }}-key-rotation-cfn.yml --s3-bucket {{ ArtifactsBucket }} --output-template-file template/{{ EnvPrefix }}-key-rotation-cfn-output.yml"
-    - name: Deploy Postgres Cloudformation stack
+    - name: Capture AWS Account number
+      shell: "{{ 'aws sts get-caller-identity --query Account --output text' }}"
+      register: account
+
+    - debug:
+        msg: AWS Account number is - "{{ account.stdout }}"
+
+    - name: Deploy a Cloudformation stack
       cloudformation:
         stack_name: "{{ cf_stack_name }}"
         state: "present"
         create_changeset: "yes"
-        template: template/{{ EnvPrefix }}-rds-cfn.yml
+        template: template/{{ EnvPrefix }}-app-cfn.yml
         changeset_name: "{{ cf_changeset_name }}"
         template_parameters:
-          DbPort: "{{ DbPort }}"
-          DBEngineVersion: "{{ DBEngineVersion }}"
-          EnablePerformanceInsights: "{{ EnablePerformanceInsights }}"
-          PerformanceInsightsRetention: "{{ PerformanceInsightsRetention }}"
-          DBSnapshotIdentifier: "{{ DBSnapshotIdentifier }}"
-          Application: "{{ Application }}"
-          readrep: "{{ readrep }}"
+          DockerImage: "{{ EnvPrefix }}-{{ Application }}"
+          Application: " {{ Application }}"
           EnvPrefix: "{{ EnvPrefix }}"
-          DBStorageType: "{{ DBStorageType }}"
-          DBUser: "{{ DBUser }}"
-          # DBPassword: "{{ DBPassword}}"
-          DBInstanceIdentifier: "{{ EnvPrefix | lower }}-{{ Application | lower }}"
-          DBSid: "{{ DBSid }}"
-          DBAllocatedStorage: "{{ DBAllocatedStorage }}"
-          DBInstanceClass: "{{ DBInstanceClass }}"
-          # DBInstanceClassRO: "{{ DBInstanceClassRO }}"
-          DBBackupRetention: "{{ DBBackupRetention }}"
-          # DBKMSEncryption: "{{ DBKMSEncryption }}"
-          MultiAZ: "{{ MultiAZ }}"
+          MinConCount: "{{ MinConCount }}"
+          MaxConCount: "{{ MaxConCount }}"
           DbSecretsArnSSM: "Database{{ EnvPrefix }}{{ Application }}DB-SecretsManager"
+          Certificate: "{{ Certificate }}"
+          S3AccesslogsBucket: "{{ ArtifactsBucket }}"
+          ALBAccessLogs: "{{ ALBAccessLogs }}"
+          AutoScalingTargetValue: "{{ AutoScalingTargetValue }}"
           # VPCId: "{{ VPCId }}"
       register: cfn_facts
       # tags:
