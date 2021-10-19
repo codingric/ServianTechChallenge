@@ -8,13 +8,13 @@ PrivateSubnets:
   - PrivateSubnetC
 DbPort: 5432
 DBSnapshotIdentifier: ""
-DBSid: TestApp # Refer to TLA and naming standards. 8 characters maximum
+DBSid: TestApp
 DBInstanceClass: db.t2.micro # DB instance class.  Do not use t2 for prod.  Aurora only accepts r4 instance class. refer to https://aws.amazon.com/rds/instance-types/
-DBBackupRetention: 7 # amount of days to keep automated snapshot backups.  accepts values between 0-35 for RDS and 1-35 for Aurora.
+DBBackupRetention: 7 # number of days to keep automated snapshot backups.  accepts values between 0-35 for RDS and 1-35 for Aurora.
 EnablePerformanceInsights: "false"
 PerformanceInsightsRetention: 7
 DBAllocatedStorage: 50 # amount of gp2 EBS storage in GiB, applicable to RDS only
 DBStorageType: gp2 # storage type io1 or gp2,applicable to RDS only
-MultiAZ: false # should be set to no unless this is for Prod.  Will double the cost of the RDS deployment
+MultiAZ: false # Set it to false unless this is for Prod.  Will double the cost of the RDS deployment
 readrep: false #set to true if you want to create read replica, false otherwise.
 

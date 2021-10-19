@@ -14,5 +14,3 @@ export AWS_SECURITY_TOKEN=${KST[2]}
 
 
 ansible-playbook rds-ansible.yml -e "EnvPrefix=$Environment"
-# export PROJECTACCOUNTS="654996818359 094551496269"
-# python3 test_python.py

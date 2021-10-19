@@ -344,7 +344,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: !Join ['', [!Ref HostedZoneName, .]]
-      Name: !Join ['', [testapp, ., !Ref HostedZoneName, .]]
+      Name: !Join ['', [!Ref EnvPrefix, ., !Ref HostedZoneName, .]]
       Type: A
       AliasTarget:
         DNSName: !GetAtt LoadBalancer.DNSName

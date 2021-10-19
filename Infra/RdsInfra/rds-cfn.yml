@@ -2,8 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Postgres CFN template
 Conditions:
   IsReadReplica: !Equals [!Ref readrep, true]
-  #KMSdefault: !Equals [ !Ref DBKMSEncryption, default ]
-  #NoKMS: !Equals [ !Ref DBKMSEncryption, none ]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, ""]]
 
 Parameters:
@@ -93,8 +91,8 @@ Resources:
       DBName: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBSid]
       MultiAZ: !Ref MultiAZ
       EnablePerformanceInsights: !Ref EnablePerformanceInsights
-      # PerformanceInsightsKMSKeyId: !Ref KMS
-      # PerformanceInsightsRetentionPeriod: !Ref PerformanceInsightsRetention
+      PerformanceInsightsKMSKeyId: !Ref KMS
+      PerformanceInsightsRetentionPeriod: !Ref PerformanceInsightsRetention
       MasterUsername:
         !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBUser]
       MasterUserPassword:
@@ -120,7 +118,7 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       BackupRetentionPeriod: !Ref DBBackupRetention
       PreferredBackupWindow: 14:00-14:30
-      # KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref KMS]
+      KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref KMS]
       StorageEncrypted: "false"
       CopyTagsToSnapshot: "true"
       AutoMinorVersionUpgrade: "true"
