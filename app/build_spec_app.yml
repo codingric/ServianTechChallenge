@@ -15,7 +15,7 @@ phases:
       - docker build -t docker build . -t servian/techchallengeapp:latest
       - docker tag servian/techchallengeapp ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp
       - aws ecr get-login-password --profile amit-teamAdmin | docker login --username AWS --password-stdin 852998739144.dkr.ecr.ap-southeast-2.amazonaws.com
-      - docker push 852998739144.dkr.ecr.ap-southeast-2.amazonaws.com/nonprod-serviantestapp
+      - docker push ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp
   post_build:
     commands:
       - echo Build completed on `date`
