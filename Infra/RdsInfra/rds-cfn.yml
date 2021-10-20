@@ -82,6 +82,7 @@ Resources:
 
   DatabaseInstance:
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: Retain
     Properties:
       Engine: postgres
       EngineVersion:
@@ -119,7 +120,7 @@ Resources:
       BackupRetentionPeriod: !Ref DBBackupRetention
       PreferredBackupWindow: 14:00-14:30
       KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref KMS]
-      StorageEncrypted: "false"
+      StorageEncrypted: "true"
       CopyTagsToSnapshot: "true"
       AutoMinorVersionUpgrade: "true"
       PreferredMaintenanceWindow: mon:13:00-mon:13:30
@@ -129,19 +130,19 @@ Resources:
     Type: AWS::RDS::DBParameterGroup
     Properties:
       Description: "Parameters of the DB Instance"
-      Family: "postgres9.6"
+      Family: "postgres10"
       Parameters:
         shared_preload_libraries: pg_stat_statements,pgaudit
 
-  # ReadReplica:
-  #   Type: AWS::RDS::DBInstance
-  #   Condition: IsReadReplica
-  #   DependsOn: DatabaseInstance
-  #   Properties:
-  #     SourceDBInstanceIdentifier: !Ref DBInstanceIdentifier
-  #     VPCSecurityGroups:
-  #       - !GetAtt [DBSecurityGroup, GroupId]
-  #     DBInstanceIdentifier: !Sub "${DBInstanceIdentifier}2"
+  ReadReplica:
+    Type: AWS::RDS::DBInstance
+    Condition: IsReadReplica
+    DependsOn: DatabaseInstance
+    Properties:
+      SourceDBInstanceIdentifier: !Ref DBInstanceIdentifier
+      VPCSecurityGroups:
+        - !GetAtt [DBSecurityGroup, GroupId]
+      DBInstanceIdentifier: !Sub "${DBInstanceIdentifier}2"
 
   DatabaseMasterSecret:
     Type: AWS::SecretsManager::Secret
@@ -253,16 +254,6 @@ Outputs:
     Export:
       Name: !Sub "${EnvPrefix}:${DBSid}:db-endpoint"
 
-  #  DbEndpointReadOnly:
-  #    Value: !GetAtt "DatabaseInstance.ReadEndpoint.Address"
-  #    Export:
-  #      Name: !Sub "${EnvPrefix}:${DBSid}:db-endpoint-ro"
-
-  DatabaseMasterSecret:
-    Value: !Ref DatabaseMasterSecret
-    Export:
-      Name: !Sub "${EnvPrefix}:${DBSid}:db-master-secret"
-
   DatabaseUrlParamAll:
     Value: !Ref DatabaseUrlAll
     Export:
@@ -273,7 +264,3 @@ Outputs:
     Export:
       Name: !Sub "${EnvPrefix}:${DBSid}:db-url-rw-param"
 
-  #DatabaseUrlReadOnlyParameter:
-  #  Value: !Ref DatabaseUrlReadOnly
-  #  Export:
-  #    Name: !Sub "${EnvPrefix}:${DBSid}:db-url-ro-param"
