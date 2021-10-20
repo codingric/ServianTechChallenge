@@ -5,7 +5,7 @@ phases:
     commands:
       - echo Installing docker
       - aws --version
-      - yum install docker
+      - yum install  docker -y
       - service docker start
 
   build:
