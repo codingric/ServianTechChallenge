@@ -352,7 +352,7 @@ Resources:
                 Provider: ECR
                 Version: "1"
               Configuration:
-                RepositoryName: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvPrefixLower}-serviantestapp"
+                RepositoryName: !Sub "${EnvPrefixLower}-serviantestapp"
                 ImageTag: "latest"
                 # OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
