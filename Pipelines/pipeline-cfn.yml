@@ -305,7 +305,10 @@ Resources:
           - ECR Image Action
         detail:
           action-type: [PUSH]
-          repository-name: [cwe-test]
+          repository-name:
+            [
+              !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvPrefixLower}-serviantestapp",
+            ]
           result: [SUCCESS]
       Name: !Sub "${AWS::StackName}-ecr-event"
       State: ENABLED
