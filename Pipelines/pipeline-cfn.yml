@@ -189,7 +189,7 @@ Resources:
             Value: !Sub "${AWS::AccountId}"
       Source:
         Type: CODEPIPELINE
-        BuildSpec: "Infra/RdsInfra/build_spec_network_infra.yml"
+        BuildSpec: "Infra/NetworkInfra/build_spec_network_infra.yml"
 
   ECRImageBuild:
     Type: AWS::CodeBuild::Project
@@ -293,11 +293,25 @@ Resources:
               OutputArtifacts:
                 - Name: S3SourceAppInfra
               RunOrder: 1
+            - Name: ECR-Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: ECR
+                Version: "1"
+              Configuration:
+                RepositoryName: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvPrefix}-serviantestapp"
+                ImageTag: "latest"
+                # OutputArtifactFormat: "CODE_ZIP"
+              OutputArtifacts:
+                - Name: SourceECRBuild
+              RunOrder: 1
         - Name: !Sub "${EnvPrefix}-AppInfra-Build"
           Actions:
             - Name: !Sub "${EnvPrefix}-AppInfra-Build"
               InputArtifacts:
                 - Name: S3SourceAppInfra
+                - Name: SourceECRBuild
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -376,7 +390,7 @@ Resources:
               Configuration:
                 ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
                 FullRepositoryId: "ErandeAmit/ServianTechChallenge"
-                BranchName: "Network-infra-non-prod"
+                BranchName: "network-infra"
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
                 - Name: S3SourceNetworkInfra

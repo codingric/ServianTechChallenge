@@ -189,7 +189,7 @@ Resources:
             Value: !Sub "${AWS::AccountId}"
       Source:
         Type: CODEPIPELINE
-        BuildSpec: "Infra/RdsInfra/build_spec_network_infra.yml"
+        BuildSpec: "Infra/NetworkInfra/build_spec_network_infra.yml"
 
   ECRImageBuild:
     Type: AWS::CodeBuild::Project
@@ -213,74 +213,6 @@ Resources:
       Source:
         Type: CODEPIPELINE
         BuildSpec: "app/build_spec_app.yml"
-
-  # CodeBuildTest:
-  #   Type: AWS::CodeBuild::Project
-  #   Properties:
-  #     Name: !Sub "${AWS::StackName}-codebuild-test"
-  #     Description: Build to push ecr image for test environment
-  #     ServiceRole: !GetAtt CodeBuildRole.Arn
-  #     Artifacts:
-  #       ArtifactIdentifier: TestBuildArtifact
-  #       Type: CODEPIPELINE
-  #     Environment:
-  #       Type: LINUX_CONTAINER
-  #       ComputeType: BUILD_GENERAL1_SMALL
-  #       Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-  #       PrivilegedMode: true
-  #       EnvironmentVariables:
-  #         - Name: EnvPrefix
-  #           Value: test
-  #         - Name: AccountID
-  #           Value: !Sub "${AWS::AccountId}"
-  #     Source:
-  #       Type: CODEPIPELINE
-  #
-  # CodeBuildQual:
-  #   Type: AWS::CodeBuild::Project
-  #   Properties:
-  #     Name: !Sub "${AWS::StackName}-codebuild-Qual"
-  #     Description: Build to push ecr image for Qual environment
-  #     ServiceRole: !GetAtt CodeBuildRole.Arn
-  #     Artifacts:
-  #       ArtifactIdentifier: QualBuildArtifact
-  #       Type: CODEPIPELINE
-  #     Environment:
-  #       Type: LINUX_CONTAINER
-  #       ComputeType: BUILD_GENERAL1_SMALL
-  #       Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-  #       PrivilegedMode: true
-  #       EnvironmentVariables:
-  #         - Name: EnvPrefix
-  #           Value: qual
-  #         - Name: AccountID
-  #           Value: !Sub "${AWS::AccountId}"
-  #     Source:
-  #       Type: CODEPIPELINE
-
-  # CodeBuildProd:
-  #   Type: AWS::CodeBuild::Project
-  #   Properties:
-  #     Name: !Sub "${AWS::StackName}-codebuild-Prod"
-  #     Description: Build to push ecr image for Prod environment
-  #     ServiceRole: !GetAtt CodeBuildRoleProd.Arn
-  #     Artifacts:
-  #       ArtifactIdentifier: ProdBuildArtifact
-  #       Type: CODEPIPELINE
-  #     Environment:
-  #       Type: LINUX_CONTAINER
-  #       ComputeType: BUILD_GENERAL1_SMALL
-  #       Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-  #       PrivilegedMode: true
-  #       EnvironmentVariables:
-  #         - Name: EnvPrefix
-  #           Value: prod0
-  #         - Name: AccountID
-  #           Value: !Ref ProdAccountID
-  #         - Name: NonProdAccountID
-  #           Value: !Sub "${AWS::AccountId}"
-  #     Source:
-  #       Type: CODEPIPELINE
 
   CodePipelineTopic:
     Type: "AWS::SNS::Topic"
@@ -335,7 +267,7 @@ Resources:
       Topics:
         - !Ref CodePipelineTopic
 
-  CodePipeline:
+  AppInfraCodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
@@ -359,13 +291,27 @@ Resources:
                 BranchName: "app-infra-non-prod"
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: S3SourceArtifacts
+                - Name: S3SourceAppInfra
+              RunOrder: 1
+            - Name: ECR-Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: ECR
+                Version: "1"
+              Configuration:
+                RepositoryName: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvPrefix}-serviantestapp"
+                ImageTag: "latest"
+                # OutputArtifactFormat: "CODE_ZIP"
+              OutputArtifacts:
+                - Name: SourceECRBuild
               RunOrder: 1
         - Name: !Sub "${EnvPrefix}-AppInfra-Build"
           Actions:
             - Name: !Sub "${EnvPrefix}-AppInfra-Build"
               InputArtifacts:
-                - Name: S3SourceArtifacts
+                - Name: S3SourceAppInfra
+                - Name: SourceECRBuild
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -377,4 +323,136 @@ Resources:
                 PrimarySource: S3SourceArtifacts
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-AppInfra-Build"
+              RunOrder: 1
+
+  RdsInfraCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref ArtifactsBucket
+        Type: S3
+      Name: !Sub "${AWS::StackName}-RdsInfra"
+      RestartExecutionOnUpdate: False
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Github-Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
+                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                BranchName: "rds-infra-non-prod"
+                OutputArtifactFormat: "CODE_ZIP"
+              OutputArtifacts:
+                - Name: S3SourceRdsInfra
+              RunOrder: 1
+        - Name: !Sub "${EnvPrefix}-Rdsnfra-Build"
+          Actions:
+            - Name: !Sub "${EnvPrefix}-RdsInfra-Build"
+              InputArtifacts:
+                - Name: S3SourceRdsInfra
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Region: !Ref AWS::Region
+              Configuration:
+                ProjectName: !Ref RDSInfraBuild
+                PrimarySource: S3SourceRdsInfra
+              OutputArtifacts:
+                - Name: !Sub "${EnvPrefix}-RdsInfra-Build"
+              RunOrder: 1
+
+  NetworkInfraCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref ArtifactsBucket
+        Type: S3
+      Name: !Sub "${AWS::StackName}-NetworkInfra"
+      RestartExecutionOnUpdate: False
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Github-Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
+                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                BranchName: "network-infra"
+                OutputArtifactFormat: "CODE_ZIP"
+              OutputArtifacts:
+                - Name: S3SourceNetworkInfra
+              RunOrder: 1
+        - Name: !Sub "${EnvPrefix}-NetworkInfra-Build"
+          Actions:
+            - Name: !Sub "${EnvPrefix}-NetworkInfra-Build"
+              InputArtifacts:
+                - Name: S3SourceNetworkInfra
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Region: !Ref AWS::Region
+              Configuration:
+                ProjectName: !Ref NetworkInfraBuild
+                PrimarySource: S3SourceNetworkInfra
+              OutputArtifacts:
+                - Name: !Sub "${EnvPrefix}-NetworkInfra-Build"
+              RunOrder: 1
+
+  ECRImageCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref ArtifactsBucket
+        Type: S3
+      Name: !Sub "${AWS::StackName}-ECRImage"
+      RestartExecutionOnUpdate: False
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Github-Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
+                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                BranchName: "develop"
+                OutputArtifactFormat: "CODE_ZIP"
+              OutputArtifacts:
+                - Name: S3SourceECRImage
+              RunOrder: 1
+        - Name: !Sub "${EnvPrefix}-ECRImage-Build"
+          Actions:
+            - Name: !Sub "${EnvPrefix}-ECRImage-Build"
+              InputArtifacts:
+                - Name: S3SourceECRImage
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Region: !Ref AWS::Region
+              Configuration:
+                ProjectName: !Ref ECRImageBuild
+                PrimarySource: S3SourceECRImage
+              OutputArtifacts:
+                - Name: !Sub "${EnvPrefix}-NetworkInfra-Build"
               RunOrder: 1
