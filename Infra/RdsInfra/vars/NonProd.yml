@@ -15,6 +15,6 @@ EnablePerformanceInsights: "true"
 PerformanceInsightsRetention: 7
 DBAllocatedStorage: 50 # amount of gp2 EBS storage in GiB, applicable to RDS only
 DBStorageType: gp2 # storage type io1 or gp2,applicable to RDS only
-MultiAZ: false # Set it to false unless this is for Prod.  Will double the cost of the RDS deployment
+MultiAZ: true # Set it to false unless this is for Prod.  Will double the cost of the RDS deployment
 readrep: false #set to true if you want to create read replica, false otherwise.
 
