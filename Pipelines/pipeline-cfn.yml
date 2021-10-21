@@ -61,27 +61,12 @@ Resources:
                 Resource: "*"
                 Effect: Allow
               - Action:
-                  - s3:GetObject
-                  - s3:GetObjectVersion
-                  - s3:PutObject
-                  - s3:GetBucketAcl
-                  - s3:GetBucketLocation
-                  - s3:ListBucket
+                  - s3:Put*
+                  - s3:List*
                   - s3:Get*
                 Resource:
-                  - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-${AWS::AccountId}/*"
-                  - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-${AWS::AccountId}"
-                Effect: Allow
-              - Action:
-                  - s3:GetObject
-                  - s3:GetObjectVersion
-                  - s3:GetBucketAcl
-                  - s3:GetBucketLocation
-                  - s3:ListBucket
-                  - s3:Get*
-                Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactsBucket}"
                   - !Sub "arn:aws:s3:::${ArtifactsBucket}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactsBucket}"
                 Effect: Allow
               - Action:
                   - events:*
@@ -140,11 +125,11 @@ Resources:
   AppInfraBuild:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub "${AWS::StackName}-codebuild-${EnvPrefix}"
-      Description: !Sub "Build to deploy the application in ${EnvPrefix} environment."
+      Name: !Sub "${AWS::StackName}-AppInfraBuild"
+      Description: !Sub "Build to deploy the application infra in ${EnvPrefix} environment."
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
-        ArtifactIdentifier: DevBuildArtifact
+        ArtifactIdentifier: AppBuildArtifact
         Type: CODEPIPELINE
       Environment:
         Type: LINUX_CONTAINER
@@ -153,12 +138,58 @@ Resources:
         PrivilegedMode: true
         EnvironmentVariables:
           - Name: Environment
-            Value: NonProd
+            Value: !Ref EnvPrefix
           - Name: AccountID
             Value: !Sub "${AWS::AccountId}"
       Source:
         Type: CODEPIPELINE
         BuildSpec: "Infra/AppInfra/build_spec_app_infra.yml"
+
+  RDSInfraBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-RdsInfraBuild"
+      Description: !Sub "Build to deploy the rds infra in ${EnvPrefix} environment."
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        ArtifactIdentifier: RdsBuildArtifact
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: Environment
+            Value: !Ref EnvPrefix
+          - Name: AccountID
+            Value: !Sub "${AWS::AccountId}"
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: "Infra/RdsInfra/build_spec_rds.yml"
+
+  NetworkInfraBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-NetworkInfraBuild"
+      Description: "Build to deploy the Network infra."
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        ArtifactIdentifier: NetworkBuildArtifact
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: Environment
+            Value: !Ref EnvPrefix
+          - Name: AccountID
+            Value: !Sub "${AWS::AccountId}"
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: "Infra/RdsInfra/build_spec_rds.yml"
 
   # CodeBuildTest:
   #   Type: AWS::CodeBuild::Project

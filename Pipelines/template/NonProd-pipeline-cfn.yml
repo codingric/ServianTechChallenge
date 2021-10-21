@@ -50,6 +50,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
         - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
+        # - arn:aws:iam::aws:policy/AmazonS3FullAccess
       Path: /
       Policies:
         - PolicyName: CodepipelineInline
@@ -61,27 +62,12 @@ Resources:
                 Resource: "*"
                 Effect: Allow
               - Action:
-                  - s3:GetObject
-                  - s3:GetObjectVersion
-                  - s3:PutObject
-                  - s3:GetBucketAcl
-                  - s3:GetBucketLocation
-                  - s3:ListBucket
+                  - s3:Put*
+                  - s3:List*
                   - s3:Get*
                 Resource:
-                  - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-${AWS::AccountId}/*"
-                  - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-${AWS::AccountId}"
-                Effect: Allow
-              - Action:
-                  - s3:GetObject
-                  - s3:GetObjectVersion
-                  - s3:GetBucketAcl
-                  - s3:GetBucketLocation
-                  - s3:ListBucket
-                  - s3:Get*
-                Resource:
-                  - !Sub "arn:aws:s3:::${ArtifactsBucket}"
                   - !Sub "arn:aws:s3:::${ArtifactsBucket}/*"
+                  - !Sub "arn:aws:s3:::${ArtifactsBucket}"
                 Effect: Allow
               - Action:
                   - events:*
