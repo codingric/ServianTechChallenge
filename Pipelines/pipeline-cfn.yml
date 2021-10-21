@@ -189,7 +189,7 @@ Resources:
             Value: !Sub "${AWS::AccountId}"
       Source:
         Type: CODEPIPELINE
-        BuildSpec: "Infra/RdsInfra/build_spec_rds.yml"
+        BuildSpec: "Infra/RdsInfra/build_spec_network_infra.yml"
 
   # CodeBuildTest:
   #   Type: AWS::CodeBuild::Project
