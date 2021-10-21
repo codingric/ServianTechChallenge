@@ -93,6 +93,12 @@ Resources:
                 Resource: "*"
                 Effect: Allow
 
+              - Action:
+                  - ecr:DescribeImages
+                  - ecr:ListImages
+                Resource: "*"
+                Effect: Allow
+
   CodeBuildEvent:
     Type: AWS::Events::Rule
     Properties:
@@ -343,7 +349,7 @@ Resources:
                 BranchName: "app-infra-non-prod"
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: S3SourceAppInfra
+                - Name: !Sub "${EnvPrefix}-S3SourceAppInfra"
               RunOrder: 1
             - Name: ECR-Source
               ActionTypeId:
@@ -356,14 +362,14 @@ Resources:
                 ImageTag: "latest"
                 # OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: SourceECRBuild
+                - Name: !Sub "${EnvPrefix}-SourceECRBuild"
               RunOrder: 1
         - Name: !Sub "${EnvPrefix}-AppInfra-Build"
           Actions:
             - Name: !Sub "${EnvPrefix}-AppInfra-Build"
               InputArtifacts:
-                - Name: S3SourceAppInfra
-                - Name: SourceECRBuild
+                - Name: !Sub "${EnvPrefix}-S3SourceAppInfra"
+                - Name: !Sub "${EnvPrefix}-SourceECRBuild"
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -372,7 +378,7 @@ Resources:
               Region: !Ref AWS::Region
               Configuration:
                 ProjectName: !Ref AppInfraBuild
-                PrimarySource: S3SourceArtifacts
+                PrimarySource: !Sub "${EnvPrefix}-S3SourceAppInfra"
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-AppInfra-Build"
               RunOrder: 1
@@ -401,13 +407,13 @@ Resources:
                 BranchName: "rds-infra-non-prod"
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: S3SourceRdsInfra
+                - Name: !Sub "${EnvPrefix}-S3SourceRdsInfra"
               RunOrder: 1
         - Name: !Sub "${EnvPrefix}-Rdsnfra-Build"
           Actions:
             - Name: !Sub "${EnvPrefix}-RdsInfra-Build"
               InputArtifacts:
-                - Name: S3SourceRdsInfra
+                - Name: !Sub "${EnvPrefix}-S3SourceRdsInfra"
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -416,7 +422,7 @@ Resources:
               Region: !Ref AWS::Region
               Configuration:
                 ProjectName: !Ref RDSInfraBuild
-                PrimarySource: S3SourceRdsInfra
+                PrimarySource: !Sub "${EnvPrefix}-S3SourceRdsInfra"
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-RdsInfra-Build"
               RunOrder: 1
@@ -445,13 +451,13 @@ Resources:
                 BranchName: "network-infra"
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: S3SourceNetworkInfra
+                - Name: !Sub "${EnvPrefix}-S3SourceNetworkInfra"
               RunOrder: 1
         - Name: !Sub "${EnvPrefix}-NetworkInfra-Build"
           Actions:
             - Name: !Sub "${EnvPrefix}-NetworkInfra-Build"
               InputArtifacts:
-                - Name: S3SourceNetworkInfra
+                - Name: !Sub "${EnvPrefix}-S3SourceNetworkInfra"
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -460,7 +466,7 @@ Resources:
               Region: !Ref AWS::Region
               Configuration:
                 ProjectName: !Ref NetworkInfraBuild
-                PrimarySource: S3SourceNetworkInfra
+                PrimarySource: !Sub "${EnvPrefix}-S3SourceNetworkInfra"
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-NetworkInfra-Build"
               RunOrder: 1
@@ -489,13 +495,13 @@ Resources:
                 BranchName: "develop"
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: S3SourceECRImage
+                - Name: !Sub "${EnvPrefix}-S3SourceECRImage"
               RunOrder: 1
         - Name: !Sub "${EnvPrefix}-ECRImage-Build"
           Actions:
             - Name: !Sub "${EnvPrefix}-ECRImage-Build"
               InputArtifacts:
-                - Name: S3SourceECRImage
+                - Name: !Sub "${EnvPrefix}-S3SourceECRImage"
               ActionTypeId:
                 Category: Build
                 Owner: AWS
