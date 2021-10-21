@@ -1,0 +1,326 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys codepipeline for documentDB used in MobileApp
+
+Metadata:
+  Author: Amit Erande <amit.erande@servian.com>
+  RepoUrl: https://bitbucket.airnz.co.nz/projects/EIT/repos/mobileapp-documentdb/
+
+Parameters:
+  Email:
+    Type: String
+
+  EnvPrefix:
+    Type: String
+
+  Application:
+    Type: String
+
+  ArtifactsBucket:
+    Type: String
+
+Resources:
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-CodeBuild-ServiceRole"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/job-function/DatabaseAdministrator
+        - arn:aws:iam::aws:policy/job-function/NetworkAdministrator
+        - arn:aws:iam::aws:policy/PowerUserAccess
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-CodePipeline-ServiceRole"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+        - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
+      Path: /
+      Policies:
+        - PolicyName: CodepipelineInline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - sns:*
+                Resource: "*"
+                Effect: Allow
+              - Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                  - s3:Get*
+                Resource:
+                  - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-${AWS::AccountId}/*"
+                  - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-${AWS::AccountId}"
+                Effect: Allow
+              - Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                  - s3:Get*
+                Resource:
+                  - !Sub "arn:aws:s3:::${ArtifactsBucket}"
+                  - !Sub "arn:aws:s3:::${ArtifactsBucket}/*"
+                Effect: Allow
+              - Action:
+                  - events:*
+                Resource:
+                  - !Sub "arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${AWS::StackName}-S3-event"
+                Effect: Allow
+              - Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Resource:
+                  - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${AWS::StackName}*"
+                Effect: Allow
+              - Action:
+                  - codestar-connections:ListTagsForResource
+                  - codestar-connections:GetConnection
+                  - codestar-connections:UseConnection
+                Resource: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
+                Effect: Allow
+              - Action:
+                  - codestar-connections:List*
+                Resource: "*"
+                Effect: Allow
+
+  CodeBuildEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "AWS event rule to notify when build failed or stopped"
+      EventPattern:
+        source:
+          - aws.codebuild
+        detail-type:
+          - CodeBuild Build State Change
+        detail:
+          build-status:
+            - FAILED
+          project-name:
+            - !Ref AppInfraBuild
+          # - !Ref CodeBuildTest
+          # - !Ref CodeBuildQual
+          # - !Ref CodeBuildProd
+      Name: !Sub "${AWS::StackName}-CodeBuild-event"
+      # RoleArn: !GetAtt ECREventRole.Arn
+      State: ENABLED
+      Targets:
+        - Id: !GetAtt CodePipelineTopic.TopicName
+          Arn: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}-Topic"
+          InputTransformer:
+            InputPathsMap:
+              {
+                "build-id": "$.detail.build-id",
+                "project-name": "$.detail.project-name",
+                "build-status": "$.detail.build-status",
+              }
+            InputTemplate: '"Build <build-id> for build project <project-name> has been FAILED. Please investigate this failure."'
+
+  AppInfraBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-codebuild-${EnvPrefix}"
+      Description: !Sub "Build to deploy the application in ${EnvPrefix} environment."
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        ArtifactIdentifier: DevBuildArtifact
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: Environment
+            Value: NonProd
+          - Name: AccountID
+            Value: !Sub "${AWS::AccountId}"
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: "Infra/AppInfra/build_spec_app_infra.yml"
+
+  # CodeBuildTest:
+  #   Type: AWS::CodeBuild::Project
+  #   Properties:
+  #     Name: !Sub "${AWS::StackName}-codebuild-test"
+  #     Description: Build to push ecr image for test environment
+  #     ServiceRole: !GetAtt CodeBuildRole.Arn
+  #     Artifacts:
+  #       ArtifactIdentifier: TestBuildArtifact
+  #       Type: CODEPIPELINE
+  #     Environment:
+  #       Type: LINUX_CONTAINER
+  #       ComputeType: BUILD_GENERAL1_SMALL
+  #       Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+  #       PrivilegedMode: true
+  #       EnvironmentVariables:
+  #         - Name: EnvPrefix
+  #           Value: test
+  #         - Name: AccountID
+  #           Value: !Sub "${AWS::AccountId}"
+  #     Source:
+  #       Type: CODEPIPELINE
+  #
+  # CodeBuildQual:
+  #   Type: AWS::CodeBuild::Project
+  #   Properties:
+  #     Name: !Sub "${AWS::StackName}-codebuild-Qual"
+  #     Description: Build to push ecr image for Qual environment
+  #     ServiceRole: !GetAtt CodeBuildRole.Arn
+  #     Artifacts:
+  #       ArtifactIdentifier: QualBuildArtifact
+  #       Type: CODEPIPELINE
+  #     Environment:
+  #       Type: LINUX_CONTAINER
+  #       ComputeType: BUILD_GENERAL1_SMALL
+  #       Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+  #       PrivilegedMode: true
+  #       EnvironmentVariables:
+  #         - Name: EnvPrefix
+  #           Value: qual
+  #         - Name: AccountID
+  #           Value: !Sub "${AWS::AccountId}"
+  #     Source:
+  #       Type: CODEPIPELINE
+
+  # CodeBuildProd:
+  #   Type: AWS::CodeBuild::Project
+  #   Properties:
+  #     Name: !Sub "${AWS::StackName}-codebuild-Prod"
+  #     Description: Build to push ecr image for Prod environment
+  #     ServiceRole: !GetAtt CodeBuildRoleProd.Arn
+  #     Artifacts:
+  #       ArtifactIdentifier: ProdBuildArtifact
+  #       Type: CODEPIPELINE
+  #     Environment:
+  #       Type: LINUX_CONTAINER
+  #       ComputeType: BUILD_GENERAL1_SMALL
+  #       Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+  #       PrivilegedMode: true
+  #       EnvironmentVariables:
+  #         - Name: EnvPrefix
+  #           Value: prod0
+  #         - Name: AccountID
+  #           Value: !Ref ProdAccountID
+  #         - Name: NonProdAccountID
+  #           Value: !Sub "${AWS::AccountId}"
+  #     Source:
+  #       Type: CODEPIPELINE
+
+  CodePipelineTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-Topic"
+      DisplayName: !Sub "${AWS::StackName}-codepipelineTopic to notify pipeline messages"
+      Subscription:
+        - Protocol: "email"
+          Endpoint: !Ref Email
+
+  CodePipelineTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        {
+          "Version": "2008-10-17",
+          "Id": "__default_policy_ID",
+          "Statement":
+            [
+              {
+                "Sid": "__default_statement_ID",
+                "Effect": "Allow",
+                "Principal": { "AWS": "*" },
+                "Action":
+                  [
+                    "SNS:GetTopicAttributes",
+                    "SNS:SetTopicAttributes",
+                    "SNS:AddPermission",
+                    "SNS:RemovePermission",
+                    "SNS:DeleteTopic",
+                    "SNS:Subscribe",
+                    "SNS:ListSubscriptionsByTopic",
+                    "SNS:Publish",
+                    "SNS:Receive",
+                  ],
+                "Resource": !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}-Topic",
+                "Condition":
+                  {
+                    "StringEquals":
+                      { "AWS:SourceOwner": !Sub "${AWS::AccountId}" },
+                  },
+              },
+              {
+                "Sid": "Allow_Publish_Events",
+                "Effect": "Allow",
+                "Principal": { "Service": "events.amazonaws.com" },
+                "Action": "sns:Publish",
+                "Resource": !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}-Topic",
+              },
+            ],
+        }
+      Topics:
+        - !Ref CodePipelineTopic
+
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref ArtifactsBucket
+        Type: S3
+      Name: !Sub "${AWS::StackName}-AppInfra"
+      RestartExecutionOnUpdate: False
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Github-Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: "1"
+              Configuration:
+                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
+                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                BranchName: "app-infra-non-prod"
+                OutputArtifactFormat: "CODE_ZIP"
+              OutputArtifacts:
+                - Name: S3SourceArtifacts
+              RunOrder: 1
+        - Name: !Sub "${EnvPrefix}-AppInfra-Build"
+          Actions:
+            - Name: !Sub "${EnvPrefix}-AppInfra-Build"
+              InputArtifacts:
+                - Name: S3SourceArtifacts
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Region: !Ref AWS::Region
+              Configuration:
+                ProjectName: !Ref AppInfraBuild
+                PrimarySource: S3SourceArtifacts
+              OutputArtifacts:
+                - Name: !Sub "${EnvPrefix}-AppInfra-Build"
+              RunOrder: 1

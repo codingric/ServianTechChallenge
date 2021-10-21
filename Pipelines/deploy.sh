@@ -13,6 +13,6 @@ export AWS_SESSION_TOKEN=${KST[2]}
 export AWS_SECURITY_TOKEN=${KST[2]}
 
 
-ansible-playbook NetworkInfra-ansible.yml -e "EnvPrefix=$Environment"
+ansible-playbook pipeline-ansible.yml -e "EnvPrefix=$Environment"
 # export PROJECTACCOUNTS="654996818359 094551496269"
 # python3 test_python.py

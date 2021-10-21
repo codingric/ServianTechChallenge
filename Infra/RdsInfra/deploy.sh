@@ -4,7 +4,7 @@ export Environment=$1
 
 ROLE="arn:aws:iam::852998739144:role/teamAdmin"
 
-KST=(`aws --profile amit-teamAdmin sts assume-role --role-arn $ROLE --role-session-name key-rotation --query '[Credentials.AccessKeyId,Credentials.SecretAccessKey,Credentials.SessionToken]' --output text`)
+KST=(`aws --profile amit-teamAdmin sts assume-role --role-arn $ROLE --role-session-name manual-ansible-deployment --query '[Credentials.AccessKeyId,Credentials.SecretAccessKey,Credentials.SessionToken]' --output text`)
 
 unset AWS_SECURITY_TOKEN
 export AWS_ACCESS_KEY_ID=${KST[0]}
