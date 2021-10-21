@@ -11,7 +11,7 @@ phases:
     commands:
       - echo Build started on `date`
       - cd Infra/NetworkInfra
-      - ansible-playbook app-ansible.yml -e "EnvPrefix=$Environment" || exit 1
+      - ansible-playbook NetworkInfra-ansible.yml -e "EnvPrefix=$Environment" || exit 1
       - echo Build finished on `date`
   post_build:
     commands:
