@@ -61,6 +61,7 @@
         template_parameters:
           Application: " {{ Application }}"
           EnvPrefix: "{{ EnvPrefix }}"
+          EnvPrefixLower: "{{ EnvPrefix | lower}}"
           Email: " {{ Email }}"
           ArtifactsBucket: "{{ ArtifactsBucket }}"
           # VPCId: "{{ VPCId }}"
