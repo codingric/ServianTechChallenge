@@ -307,7 +307,7 @@ Resources:
           action-type:
             - PUSH
           repository-name:
-            - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvPrefixLower}-serviantestapp"
+            - !Sub "${EnvPrefixLower}-serviantestapp"
           image-tag:
             - latest
           result:
