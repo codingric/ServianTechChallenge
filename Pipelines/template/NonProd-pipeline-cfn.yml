@@ -304,12 +304,14 @@ Resources:
         detail-type:
           - ECR Image Action
         detail:
-          action-type: [PUSH]
+          action-type:
+            - PUSH
           repository-name:
-            [
-              !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvPrefixLower}-serviantestapp",
-            ]
-          result: [SUCCESS]
+            - !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EnvPrefixLower}-serviantestapp"
+          image-tag:
+            - latest
+          result:
+            - SUCCESS
       Name: !Sub "${AWS::StackName}-ecr-event"
       State: ENABLED
       Targets:
