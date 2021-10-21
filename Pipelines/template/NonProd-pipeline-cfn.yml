@@ -50,7 +50,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
         - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
-        # - arn:aws:iam::aws:policy/AmazonS3FullAccess
       Path: /
       Policies:
         - PolicyName: CodepipelineInline
@@ -126,11 +125,11 @@ Resources:
   AppInfraBuild:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub "${AWS::StackName}-codebuild-${EnvPrefix}"
-      Description: !Sub "Build to deploy the application in ${EnvPrefix} environment."
+      Name: !Sub "${AWS::StackName}-AppInfraBuild"
+      Description: !Sub "Build to deploy the application infra in ${EnvPrefix} environment."
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
-        ArtifactIdentifier: DevBuildArtifact
+        ArtifactIdentifier: AppBuildArtifact
         Type: CODEPIPELINE
       Environment:
         Type: LINUX_CONTAINER
@@ -139,12 +138,81 @@ Resources:
         PrivilegedMode: true
         EnvironmentVariables:
           - Name: Environment
-            Value: NonProd
+            Value: !Ref EnvPrefix
           - Name: AccountID
             Value: !Sub "${AWS::AccountId}"
       Source:
         Type: CODEPIPELINE
         BuildSpec: "Infra/AppInfra/build_spec_app_infra.yml"
+
+  RDSInfraBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-RdsInfraBuild"
+      Description: !Sub "Build to deploy the rds infra in ${EnvPrefix} environment."
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        ArtifactIdentifier: RdsBuildArtifact
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: Environment
+            Value: !Ref EnvPrefix
+          - Name: AccountID
+            Value: !Sub "${AWS::AccountId}"
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: "Infra/RdsInfra/build_spec_rds.yml"
+
+  NetworkInfraBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-NetworkInfraBuild"
+      Description: "Build to deploy the Network infra."
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        ArtifactIdentifier: NetworkBuildArtifact
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: Environment
+            Value: !Ref EnvPrefix
+          - Name: AccountID
+            Value: !Sub "${AWS::AccountId}"
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: "Infra/RdsInfra/build_spec_network_infra.yml"
+
+  ECRImageBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AWS::StackName}-EcrImageBuild"
+      Description: !Sub "Build to create the ECR image of ${Application}."
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        ArtifactIdentifier: EcrImageBuildArtifact
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: Environment
+            Value: !Ref EnvPrefix
+          - Name: AccountID
+            Value: !Sub "${AWS::AccountId}"
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: "app/build_spec_app.yml"
 
   # CodeBuildTest:
   #   Type: AWS::CodeBuild::Project
