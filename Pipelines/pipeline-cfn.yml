@@ -24,13 +24,13 @@ Parameters:
   AppInfraBranch:
     Type: String
 
-  RdsInfraBranch: 
+  RdsInfraBranch:
     Type: String
 
-  NetworkInfraBranch: 
+  NetworkInfraBranch:
     Type: String
-    
-  ECRImageBranch: 
+
+  ECRImageBranch:
     Type: String
 
 Resources:
@@ -361,7 +361,7 @@ Resources:
                 BranchName: !Ref AppInfraBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: !Sub "${EnvPrefix}-S3SourceAppInfra"
+                - Name: !Sub "${EnvPrefix}S3SourceAppInfra"
               RunOrder: 1
             - Name: ECR-Source
               ActionTypeId:
@@ -374,14 +374,14 @@ Resources:
                 ImageTag: "latest"
                 # OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
-                - Name: !Sub "${EnvPrefix}-SourceECRBuild"
+                - Name: !Sub "${EnvPrefix}SourceECRBuild"
               RunOrder: 1
         - Name: !Sub "${EnvPrefix}-AppInfra-Build"
           Actions:
             - Name: !Sub "${EnvPrefix}-AppInfra-Build"
               InputArtifacts:
-                - Name: !Sub "${EnvPrefix}-S3SourceAppInfra"
-                - Name: !Sub "${EnvPrefix}-SourceECRBuild"
+                - Name: !Sub "${EnvPrefix}S3SourceAppInfra"
+                - Name: !Sub "${EnvPrefix}SourceECRBuild"
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -390,9 +390,9 @@ Resources:
               Region: !Ref AWS::Region
               Configuration:
                 ProjectName: !Ref AppInfraBuild
-                PrimarySource: !Sub "${EnvPrefix}-S3SourceAppInfra"
+                PrimarySource: !Sub "${EnvPrefix}S3SourceAppInfra"
               OutputArtifacts:
-                - Name: !Sub "${EnvPrefix}-AppInfra-Build"
+                - Name: !Sub "${EnvPrefix}AppInfraBuild"
               RunOrder: 1
 
   RdsInfraCodePipeline:
