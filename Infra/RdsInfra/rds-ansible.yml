@@ -72,6 +72,7 @@
         template_parameters:
           DbPort: "{{ DbPort }}"
           DBEngineVersion: "{{ DBEngineVersion }}"
+          ParameterGroupFamily: "{{ ParameterGroupFamily }}"
           EnablePerformanceInsights: "{{ EnablePerformanceInsights }}"
           PerformanceInsightsRetention: "{{ PerformanceInsightsRetention }}"
           DBSnapshotIdentifier: "{{ DBSnapshotIdentifier }}"

@@ -47,6 +47,9 @@ Parameters:
   MultiAZ:
     Type: String
 
+  ParameterGroupFamily:
+    Type: String
+
   DbSecretsArnSSM:
     Type: String
 
@@ -131,7 +134,7 @@ Resources:
     Type: AWS::RDS::DBParameterGroup
     Properties:
       Description: "Parameters of the DB Instance"
-      Family: "postgres9.6"
+      Family: !Ref ParameterGroupFamily
       Parameters:
         shared_preload_libraries: pg_stat_statements,pgaudit
 
