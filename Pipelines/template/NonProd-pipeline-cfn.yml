@@ -326,8 +326,6 @@ Resources:
             - PUSH
           repository-name:
             - !Sub "${EnvPrefixLower}-serviantestapp"
-          image-tag:
-            - latest
           result:
             - SUCCESS
       Name: !Sub "${AWS::StackName}-ecr-event"
