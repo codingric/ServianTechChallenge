@@ -69,6 +69,7 @@
           ALBAccessLogs: "{{ ALBAccessLogs }}"
           AutoScalingTargetValue: "{{ AutoScalingTargetValue }}"
           Certificate: "acm-arn-{{ Application }}"
+          EcrImageTag: "{{ EnvPrefix | lower }}-{{ Application }}-ECR-Tag"
           # VPCId: "{{ VPCId }}"
       register: cfn_facts
       # tags:

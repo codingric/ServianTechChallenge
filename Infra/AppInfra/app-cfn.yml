@@ -41,6 +41,9 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     #the certificate ARN from Certificate Manager, which must exist in the same region.
 
+  EcrImageTag:
+    Type: AWS::SSM::Parameter::Value<String>
+
   MaxConCount:
     Type: Number
 
@@ -240,8 +243,7 @@ Resources:
       TaskRoleArn: !Ref ECSTaskRole
       ContainerDefinitions:
         - Name: !Sub "${AWS::StackName}-ecs"
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${DockerImage}:latest"
-          Image: 852998739144.dkr.ecr.ap-southeast-2.amazonaws.com/nonprod-serviantestapp
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${DockerImage}:${EcrImageTag}"
           Command:
             - serve
           PortMappings:
