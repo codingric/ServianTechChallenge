@@ -13,9 +13,9 @@ phases:
       - echo Build started on `date`
       - cd app
       - docker build . -t servian/techchallengeapp:latest
-      - docker tag servian/techchallengeapp ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp
+      - docker tag servian/techchallengeapp ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp:${CODEBUILD_BUILD_NUMBER}
       - aws ecr get-login-password | docker login --username AWS --password-stdin ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-      - docker push ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp
+      - docker push ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp:${CODEBUILD_BUILD_NUMBER}
   post_build:
     commands:
       - echo Build completed on `date`
