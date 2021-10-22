@@ -3,6 +3,7 @@ Description: Postgres CFN template
 Conditions:
   IsReadReplica: !Equals [!Ref readrep, true]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, ""]]
+  IsPerformanceInsights: !Equals [!Ref EnablePerformanceInsights, true]
 
 Parameters:
   DbPort:
@@ -92,8 +93,8 @@ Resources:
       DBName: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBSid]
       MultiAZ: !Ref MultiAZ
       EnablePerformanceInsights: !Ref EnablePerformanceInsights
-      PerformanceInsightsKMSKeyId: !Ref KMS
-      PerformanceInsightsRetentionPeriod: !Ref PerformanceInsightsRetention
+      PerformanceInsightsKMSKeyId: !If [IsPerformanceInsights, !Ref "AWS::NoValue", !Ref KMS] 
+      PerformanceInsightsRetentionPeriod: !If [IsPerformanceInsights, !Ref "AWS::NoValue", !Ref PerformanceInsightsRetention]
       MasterUsername:
         !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBUser]
       MasterUserPassword:
