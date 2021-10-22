@@ -93,8 +93,8 @@ Resources:
       DBName: !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBSid]
       MultiAZ: !Ref MultiAZ
       EnablePerformanceInsights: !Ref EnablePerformanceInsights
-      PerformanceInsightsKMSKeyId: !If [IsPerformanceInsights, !Ref "AWS::NoValue", !Ref KMS] 
-      PerformanceInsightsRetentionPeriod: !If [IsPerformanceInsights, !Ref "AWS::NoValue", !Ref PerformanceInsightsRetention]
+      PerformanceInsightsKMSKeyId: !If [IsPerformanceInsights,  !Ref KMS, !Ref "AWS::NoValue"] 
+      PerformanceInsightsRetentionPeriod: !If [IsPerformanceInsights, !Ref PerformanceInsightsRetention, !Ref "AWS::NoValue"]
       MasterUsername:
         !If [HasDBSnapshotIdentifier, !Ref "AWS::NoValue", !Ref DBUser]
       MasterUserPassword:
