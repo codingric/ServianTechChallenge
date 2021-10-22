@@ -49,7 +49,23 @@ Resources:
         - arn:aws:iam::aws:policy/job-function/DatabaseAdministrator
         - arn:aws:iam::aws:policy/job-function/NetworkAdministrator
         - arn:aws:iam::aws:policy/PowerUserAccess
-
+      Policies:
+        - PolicyName: IAMInline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - iam:GetRole
+                  - iam:GetRolePolicy
+                  - iam:PassRole
+                  - iam:DetachRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:DeleteRole
+                  - iam:CreateRole
+                  - iam:AttachRolePolicy
+                  - iam:PutRolePolicy
+                Resource: "arn:aws:iam::*:role/*"
+                Effect: Allow
   CodePipelineRole:
     Type: AWS::IAM::Role
     Properties:
