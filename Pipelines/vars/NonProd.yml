@@ -1,4 +1,8 @@
 # VpcId: "10.0.0.0/16"
 Application: ServiantestApp
-Email: erande.amit@gmail.com
+Email: erande.amit@gmail.com #Email to send alerts when build fails
 
+AppInfraBranch: app-infra-non-prod #Branch name to be used to deploy the application infrastructure
+RdsInfraBranch: rds-infra-non-prod #Branch name to be used to deploy the RDS infrastructure
+NetworkInfraBranch: network-infra #Branch name to be used to deploy the Network infrastructure
+ECRImageBranch: develop #Branch name to be used to create new ECR image

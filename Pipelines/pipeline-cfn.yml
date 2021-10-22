@@ -21,6 +21,18 @@ Parameters:
   ArtifactsBucket:
     Type: String
 
+  AppInfraBranch:
+    Type: String
+
+  RdsInfraBranch: 
+    Type: String
+
+  NetworkInfraBranch: 
+    Type: String
+    
+  ECRImageBranch: 
+    Type: String
+
 Resources:
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -113,9 +125,9 @@ Resources:
             - FAILED
           project-name:
             - !Ref AppInfraBuild
-          # - !Ref CodeBuildTest
-          # - !Ref CodeBuildQual
-          # - !Ref CodeBuildProd
+            - !Ref RDSInfraBuild
+            - !Ref NetworkInfraBuild
+            - !Ref ECRImageBuild
       Name: !Sub "${AWS::StackName}-CodeBuild-event"
       # RoleArn: !GetAtt ECREventRole.Arn
       State: ENABLED
@@ -346,7 +358,7 @@ Resources:
               Configuration:
                 ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
                 FullRepositoryId: "ErandeAmit/ServianTechChallenge"
-                BranchName: "app-infra-non-prod"
+                BranchName: !Ref AppInfraBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-S3SourceAppInfra"
@@ -404,7 +416,7 @@ Resources:
               Configuration:
                 ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
                 FullRepositoryId: "ErandeAmit/ServianTechChallenge"
-                BranchName: "rds-infra-non-prod"
+                BranchName: !Ref RdsInfraBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-S3SourceRdsInfra"
@@ -448,7 +460,7 @@ Resources:
               Configuration:
                 ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
                 FullRepositoryId: "ErandeAmit/ServianTechChallenge"
-                BranchName: "network-infra"
+                BranchName: !Ref NetworkInfraBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-S3SourceNetworkInfra"
@@ -492,7 +504,7 @@ Resources:
               Configuration:
                 ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
                 FullRepositoryId: "ErandeAmit/ServianTechChallenge"
-                BranchName: "develop"
+                BranchName: !Ref ECRImageBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
                 - Name: !Sub "${EnvPrefix}-S3SourceECRImage"

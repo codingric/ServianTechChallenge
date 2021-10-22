@@ -64,6 +64,10 @@
           EnvPrefixLower: "{{ EnvPrefix | lower}}"
           Email: " {{ Email }}"
           ArtifactsBucket: "{{ ArtifactsBucket }}"
+          AppInfraBranch: "{{ AppInfraBranch }}"
+          RdsInfraBranch: "{{ RdsInfraBranch }}"
+          NetworkInfraBranch: "{{ NetworkInfraBranch }}"
+          ECRImageBranch: "{{ ECRImageBranch }}"
           # VPCId: "{{ VPCId }}"
       register: cfn_facts
       # tags:
