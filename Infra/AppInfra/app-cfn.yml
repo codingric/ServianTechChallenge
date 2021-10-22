@@ -38,7 +38,7 @@ Parameters:
     Type: String
 
   Certificate:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
     #the certificate ARN from Certificate Manager, which must exist in the same region.
 
   MaxConCount:

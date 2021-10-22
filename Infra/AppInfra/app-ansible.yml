@@ -65,10 +65,10 @@
           MinConCount: "{{ MinConCount }}"
           MaxConCount: "{{ MaxConCount }}"
           DbSecretsArnSSM: "Database{{ EnvPrefix }}{{ Application }}DB-SecretsManager"
-          Certificate: "{{ Certificate }}"
           S3AccesslogsBucket: "{{ ArtifactsBucket }}"
           ALBAccessLogs: "{{ ALBAccessLogs }}"
           AutoScalingTargetValue: "{{ AutoScalingTargetValue }}"
+          Certificate: "acm-arn-{{ Application }}"
           # VPCId: "{{ VPCId }}"
       register: cfn_facts
       # tags:
