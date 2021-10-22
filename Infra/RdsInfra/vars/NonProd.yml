@@ -7,7 +7,7 @@ PrivateSubnets:
   - PrivateSubnetB
   - PrivateSubnetC
 DbPort: 5432
-DBSnapshotIdentifier: ""
+DBSnapshotIdentifier: "" #Dont remove the snapshot identified parameter once the snapshot identified has been added. Blank otherwise
 DBSid: TestApp
 DBInstanceClass: db.t3.micro # DB instance class.  Do not use t2 for prod.  Aurora only accepts r4 instance class. refer to https://aws.amazon.com/rds/instance-types/
 DBBackupRetention: 7 # number of days to keep automated snapshot backups.  accepts values between 0-35 for RDS and 1-35 for Aurora.
