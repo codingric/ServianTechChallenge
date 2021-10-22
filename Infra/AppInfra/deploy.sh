@@ -30,6 +30,11 @@ ROLE="arn:aws:iam::${AWS_ACCOUNT}:role/${Role}"
 
 KST=(`aws --profile ${Profile} sts assume-role --role-arn $ROLE --role-session-name manual-ansible-deployment-${Role} --query '[Credentials.AccessKeyId,Credentials.SecretAccessKey,Credentials.SessionToken]' --output text`)
 
+unset AWS_SECURITY_TOKEN
+export AWS_ACCESS_KEY_ID=${KST[0]}
+export AWS_SECRET_ACCESS_KEY=${KST[1]}
+export AWS_SESSION_TOKEN=${KST[2]}
+export AWS_SECURITY_TOKEN=${KST[2]}
 
 ansible-playbook app-ansible.yml -e "EnvPrefix=$Environment"
 # export PROJECTACCOUNTS="654996818359 094551496269"
