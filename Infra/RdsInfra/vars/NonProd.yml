@@ -11,7 +11,7 @@ DBSnapshotIdentifier: ""
 DBSid: TestApp
 DBInstanceClass: db.t3.micro # DB instance class.  Do not use t2 for prod.  Aurora only accepts r4 instance class. refer to https://aws.amazon.com/rds/instance-types/
 DBBackupRetention: 7 # number of days to keep automated snapshot backups.  accepts values between 0-35 for RDS and 1-35 for Aurora.
-EnablePerformanceInsights: "true"
+EnablePerformanceInsights: "false" #Performance insights is not supported on version 9
 PerformanceInsightsRetention: 7
 DBAllocatedStorage: 50 # amount of gp2 EBS storage in GiB, applicable to RDS only
 DBStorageType: gp2 # storage type io1 or gp2,applicable to RDS only
