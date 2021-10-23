@@ -69,6 +69,11 @@
           NetworkInfraBranch: "{{ NetworkInfraBranch }}"
           ECRImageBranch: "{{ ECRImageBranch }}"
           # VPCId: "{{ VPCId }}"
+        tags:
+          Application: "{{ Application }}"
+          CreatedBy: "Amit Erande"
+          Email: "erande.amit@gmail.com"
+          Dept: "DevOps"
       register: cfn_facts
       # tags:
       #   - keyRotation
