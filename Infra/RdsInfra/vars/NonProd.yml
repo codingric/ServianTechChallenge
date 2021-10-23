@@ -3,7 +3,7 @@ Application: ServiantestApp
 DBEngineVersion: 9.6.23
 ParameterGroupFamily: postgres9.6
 DBUser: postgres
-PrivateSubnets:
+PrivateSubnets: #DB subnet group will be created using these subnets
   - PrivateSubnetA
   - PrivateSubnetB
   - PrivateSubnetC
