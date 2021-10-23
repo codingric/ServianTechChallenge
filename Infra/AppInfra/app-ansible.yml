@@ -69,7 +69,11 @@
           S3AccesslogsBucket: "{{ ArtifactsBucket }}"
           ALBAccessLogs: "{{ ALBAccessLogs }}"
           AutoScalingTargetValue: "{{ AutoScalingTargetValue }}"
-          # VPCId: "{{ VPCId }}"
+        tags:
+          Application: "{{ Application }}"
+          CreatedBy: "Amit Erande"
+          Email: "erande.amit@gmail.com"
+          Dept: "DevOps"
       register: cfn_facts
       # tags:
       #   - keyRotation
