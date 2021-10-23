@@ -59,7 +59,7 @@
         template: template/{{ EnvPrefix }}-app-cfn.yml
         changeset_name: "{{ cf_changeset_name }}"
         template_parameters:
-          DockerImage: "{{ EnvPrefix }}-{{ Application }}"
+          DockerImage: "{{ EnvPrefix | lower }}-{{ Application | lower }}"
           Application: " {{ Application }}"
           EnvPrefix: "{{ EnvPrefix }}"
           MinConCount: "{{ MinConCount }}"
