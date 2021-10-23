@@ -91,6 +91,11 @@
           MultiAZ: "{{ MultiAZ }}"
           DbSecretsArnSSM: "Database{{ EnvPrefix }}{{ Application }}DB-SecretsManager"
           # VPCId: "{{ VPCId }}"
+        tags:
+          Application: "{{ Application }}"
+          CreatedBy: "Amit Erande"
+          Email: "erande.amit@gmail.com"
+          Dept: "DevOps"
       register: cfn_facts
       # tags:
       #   - keyRotation
