@@ -50,8 +50,6 @@ Parameters:
   MinConCount:
     Type: Number
     Default: 1
-  # DBInstanceClassRW:
-  #   Type: String
 
 Resources:
   ECSCluster:
@@ -312,7 +310,6 @@ Resources:
         # - Key: access_logs.s3.prefix
         #   Value: !Sub "${EnvPrefix}-${Application}"
       Name: !Join ['', [!Sub "${AWS::StackName}", LB]]
-      # "internal" is also an option
       Scheme: internet-facing
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
@@ -375,7 +372,7 @@ Resources:
           PredefinedMetricType: ECSServiceAverageCPUUtilization
         ScaleInCooldown: 30
         ScaleOutCooldown: 30
-        # Keep things at or lower than 50% CPU utilization, for example
+        # To keep things at or lower than 50% CPU utilization, for example
         TargetValue: !Ref AutoScalingTargetValue
 
   AutoScalingRole:

@@ -18,6 +18,6 @@ MinConCount: 2
 #The max number of fargate ECS Tasks that can exists
 MaxConCount: 5
 #The max CPU utilization before scalling event can occur.
-AutoScalingTargetValue: 50
+AutoScalingTargetValue: 70
 #ALB Access logs enable/disable
 ALBAccessLogs: "false"

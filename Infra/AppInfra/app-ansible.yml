@@ -26,10 +26,6 @@
 
     - debug:
         msg: Var file is - "{{ local_repository }}/vars/{{ EnvPrefix }}.yml"
-    # - name: Create directory for template files for CFN
-    #   file:
-    #     path: "{{ local_repository }}/template"
-    #     state: directory
 
     - name: Display variables.
       include_vars:
@@ -72,41 +68,3 @@
           EcrImageTag: "{{ EnvPrefix | lower }}-{{ Application }}-ECR-Tag"
           # VPCId: "{{ VPCId }}"
       register: cfn_facts
-      # tags:
-      #   - keyRotation
-
-    # - name: Safe Mode | Get details about each change
-    #   shell: "{{ 'aws cloudformation describe-change-set --change-set-name ' + cf_changeset_name + ' --stack-name ' + cf_stack_name }}"
-    #   register: aws_cfnsget_cs_result
-    #   when: cfn_facts is changed
-
-    # - name: Safe Mode | Show changeset changes
-    #   debug:
-    #     msg: |
-    #       The changes CloudFormation will make:
-    #       {{ (aws_cfnsget_cs_result.stdout | from_json)['Changes'] | to_yaml }}"
-    #   when: cfn_facts is changed
-
-    # - name: Safe Mode | Review Template Differences and press 'C' and return to Continue or 'A' and return to abort
-    #   pause:
-    #     echo: yes
-    #   register: aws_cfnspause_result
-    #   when: cfn_facts is changed
-
-    # # - name: Safe Mode | Fail if aborted
-    # #   fail:
-    # #     msg: "Interrupted..."
-    # #   when: aws_cfnspause_result.user_input | d('') | lower is search('a')
-
-    # - name: Safe Mode | Execute Change sets
-    #   shell: "{{ 'aws cloudformation execute-change-set --change-set-name ' + cf_changeset_name + ' --stack-name ' + cf_stack_name }}"
-    #   when: cfn_facts is changed
-
-    # - name: Poll cloudformation until its in a steady state
-    #   cloudformation_info:
-    #     stack_name: "{{ cf_stack_name }}"
-    #   register: cfn_facts
-    #   retries: "50"
-    #   delay: "5"
-    #   until: cfn_facts['cloudformation'][cf_stack_name]['stack_description']['stack_status'] in ["UPDATE_COMPLETE","CREATE_COMPLETE","ROLLBACK_COMPLETE","UPDATE_ROLLBACK_COMPLETE","DELETE_COMPLETE"]
-    #   when: cfn_facts is changed
