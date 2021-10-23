@@ -14,7 +14,7 @@ phases:
       - cd app
       - docker build . -t servian/techchallengeapp:latest
       - docker tag servian/techchallengeapp ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp:${CODEBUILD_BUILD_NUMBER}
-      - aws ssm put-parameter --name ${ENVPREFIX}-ServiantestApp-ECR-Tag --value ${CODEBUILD_BUILD_NUMBER} --type String
+      - aws ssm put-parameter --name ${ENVPREFIX}-ServiantestApp-ECR-Tag --value ${CODEBUILD_BUILD_NUMBER} --type String --overwrite
       - aws ecr get-login-password | docker login --username AWS --password-stdin ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com
       - docker push ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp:${CODEBUILD_BUILD_NUMBER}
   post_build:
