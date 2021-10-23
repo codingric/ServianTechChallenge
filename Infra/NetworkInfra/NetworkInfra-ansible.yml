@@ -7,11 +7,6 @@
     local_repository: "{{ playbook_dir }}"
     ArtifactsBucket: nehamits-artifacts-bucket
     cf_stack_name: "{{ EnvPrefix | lower }}-network-infra"
-    # ApiRoutkeys:
-    #   - ProjectAccountRoute: /bye
-    #     ApiGwAccountRoute: /v1/bye
-    #   - ProjectAccountRoute: /hello
-    #     ApiGwAccountRoute: /v1/hello
 
   vars_files: "{{ local_repository }}/vars/{{ EnvPrefix }}.yml"
 
@@ -26,10 +21,6 @@
 
     - debug:
         msg: Var file is - "{{ local_repository }}/vars/{{ EnvPrefix }}.yml"
-    # - name: Create directory for template files for CFN
-    #   file:
-    #     path: "{{ local_repository }}/template"
-    #     state: directory
 
     - name: Display variables.
       include_vars:
@@ -44,24 +35,6 @@
         src: NetworkInfra-cfn.yml
         dest: template/{{ EnvPrefix }}-NetworkInfra-cfn.yml
 
-    # - name: Copy KeyRotation lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/KeyRotationcode"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Copy WafRule update lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/WafRuleUpdatecode"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Copy Cloudfront distribution update lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/KeyRotationcode-phase2"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Copy key rollback lambda code to template directory
-    #   copy:
-    #     src: "{{ local_repository }}/KeyRollbackFunction"
-    #     dest: "{{ local_repository }}/template/"
-    # - name: Package Cloud Formation templates that contain LambdaFunction.
-    #   shell: "aws cloudformation package --template-file template/{{ EnvPrefix }}-key-rotation-cfn.yml --s3-bucket {{ ArtifactsBucket }} --output-template-file template/{{ EnvPrefix }}-key-rotation-cfn-output.yml"
     - name: Deploy network infrastructure.
       cloudformation:
         stack_name: "{{ cf_stack_name }}"
@@ -81,5 +54,3 @@
           Email: "erande.amit@gmail.com"
           Dept: "DevOps"
       register: cfn_facts
-      # tags:
-      #   - keyRotation
