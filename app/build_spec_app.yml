@@ -13,6 +13,7 @@ phases:
       - echo Build started on `date`
       - cd app
       - docker build . -t servian/techchallengeapp:latest
+      - aws ecr create-repository --repository-name ${ENVPREFIX}-serviantestapp --image-tag-mutability IMMUTABLE --image-scanning-configuration scanOnPush=true
       - docker tag servian/techchallengeapp ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ENVPREFIX}-serviantestapp:${CODEBUILD_BUILD_NUMBER}
       - aws ssm put-parameter --name ${ENVPREFIX}-ServiantestApp-ECR-Tag --value ${CODEBUILD_BUILD_NUMBER} --type String --overwrite
       - aws ecr get-login-password | docker login --username AWS --password-stdin ${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com
