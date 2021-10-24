@@ -352,6 +352,7 @@ Resources:
           RoleArn: !GetAtt EventRole.Arn
 
   AppInfraCodePipeline:
+    DependsOn: RdsInfraCodePipeline
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
@@ -410,6 +411,7 @@ Resources:
               RunOrder: 1
 
   RdsInfraCodePipeline:
+    DependsOn: NetworkInfraCodePipeline
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
@@ -498,6 +500,7 @@ Resources:
               RunOrder: 1
 
   ECRImageCodePipeline:
+    DependsOn: NetworkInfraCodePipeline
     Type: AWS::CodePipeline::Pipeline
     Properties:
       ArtifactStore:
