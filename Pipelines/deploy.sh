@@ -23,7 +23,7 @@ done
 if [ -z "$Environment" ] || [ -z "$Profile" ] || [ -z "$Role" ]
 then
    echo "Some or all of the parameters are empty";
-   helpFunction
+   helpfunction
 fi
 
 AWS_ACCOUNT=(`aws sts get-caller-identity --query Account --output text`)
