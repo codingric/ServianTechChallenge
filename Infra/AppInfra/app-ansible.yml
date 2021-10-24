@@ -7,11 +7,6 @@
     local_repository: "{{ playbook_dir }}"
     ArtifactsBucket: nehamits-artifacts-bucket
     cf_stack_name: "{{ EnvPrefix | lower }}-{{ Application | lower }}-app"
-    # ApiRoutkeys:
-    #   - ProjectAccountRoute: /bye
-    #     ApiGwAccountRoute: /v1/bye
-    #   - ProjectAccountRoute: /hello
-    #     ApiGwAccountRoute: /v1/hello
 
   vars_files: "{{ local_repository }}/vars/{{ EnvPrefix }}.yml"
 
