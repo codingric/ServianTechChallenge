@@ -33,6 +33,12 @@ Parameters:
   ECRImageBranch:
     Type: String
 
+  GitHubConnection:
+    Type: AWS::SSM::Parameter::Value<String>
+
+  RepoID:
+    Type: String
+
 Resources:
   CodeBuildRole:
     Type: AWS::IAM::Role
@@ -114,7 +120,7 @@ Resources:
                   - codestar-connections:ListTagsForResource
                   - codestar-connections:GetConnection
                   - codestar-connections:UseConnection
-                Resource: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
+                Resource: !Ref GitHubConnection
                 Effect: Allow
               - Action:
                   - codestar-connections:List*
@@ -371,8 +377,8 @@ Resources:
                 Provider: CodeStarSourceConnection
                 Version: "1"
               Configuration:
-                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
-                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                ConnectionArn: !Ref GitHubConnection
+                FullRepositoryId: !Ref RepoID
                 BranchName: !Ref AppInfraBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
@@ -430,8 +436,8 @@ Resources:
                 Provider: CodeStarSourceConnection
                 Version: "1"
               Configuration:
-                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
-                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                ConnectionArn: !Ref GitHubConnection
+                FullRepositoryId: !Ref RepoID
                 BranchName: !Ref RdsInfraBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
@@ -474,8 +480,8 @@ Resources:
                 Provider: CodeStarSourceConnection
                 Version: "1"
               Configuration:
-                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
-                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                ConnectionArn: !Ref GitHubConnection
+                FullRepositoryId: !Ref RepoID
                 BranchName: !Ref NetworkInfraBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:
@@ -519,8 +525,8 @@ Resources:
                 Provider: CodeStarSourceConnection
                 Version: "1"
               Configuration:
-                ConnectionArn: "arn:aws:codestar-connections:ap-southeast-2:852998739144:connection/64ce87be-41f1-496d-a487-74dc9eab7726"
-                FullRepositoryId: "ErandeAmit/ServianTechChallenge"
+                ConnectionArn: !Ref GitHubConnection
+                FullRepositoryId: !Ref RepoID
                 BranchName: !Ref ECRImageBranch
                 OutputArtifactFormat: "CODE_ZIP"
               OutputArtifacts:

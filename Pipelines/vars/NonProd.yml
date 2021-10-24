@@ -5,3 +5,4 @@ AppInfraBranch: app-infra-non-prod #Branch name to be used to deploy the applica
 RdsInfraBranch: rds-infra-non-prod #Branch name to be used to deploy the RDS infrastructure
 NetworkInfraBranch: network-infra #Branch name to be used to deploy the Network infrastructure
 ECRImageBranch: develop #Branch name to be used to create new ECR image
+RepoID: "ErandeAmit/ServianTechChallenge" #GitHub Repository ID

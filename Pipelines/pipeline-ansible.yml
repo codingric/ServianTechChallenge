@@ -59,6 +59,8 @@
           RdsInfraBranch: "{{ RdsInfraBranch }}"
           NetworkInfraBranch: "{{ NetworkInfraBranch }}"
           ECRImageBranch: "{{ ECRImageBranch }}"
+          RepoID: "{{ RepoID }}"
+          GitHubConnection: {{ Application }}-GiHubConnection
           # VPCId: "{{ VPCId }}"
         tags:
           Application: "{{ Application }}"
