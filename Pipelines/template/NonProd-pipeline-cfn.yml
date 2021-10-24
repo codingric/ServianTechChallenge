@@ -2,8 +2,8 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Deploys codepipeline for documentDB used in MobileApp
 
 Metadata:
-  Author: Amit Erande <amit.erande@servian.com>
-  RepoUrl: https://bitbucket.airnz.co.nz/projects/EIT/repos/mobileapp-documentdb/
+  Author: Amit Erande <erande.amit@gmail.com>
+  VCS: git@github.com:ErandeAmit/ServianTechChallenge.git
 
 Parameters:
   Email:
