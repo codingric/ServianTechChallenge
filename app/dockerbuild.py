@@ -25,7 +25,7 @@ def check_repository():
         )
 
         print(
-            f'The repostory with name - {envprefix}-{application} already exists')
+            f'The repostory with name - {envprefix}-serviantestapp already exists')
     except Exception as e:
         print(e)
         print("ECR repo does not exists, creating one.")
