@@ -7,6 +7,7 @@
     local_repository: "{{ playbook_dir }}"
     ArtifactsBucket: nehamits-artifacts-bucket
     cf_stack_name: "{{ EnvPrefix | lower }}-network-infra"
+    Application: ServiantestApp
 
   vars_files: "{{ local_repository }}/vars/{{ EnvPrefix }}.yml"
 
