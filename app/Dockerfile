@@ -29,7 +29,7 @@ RUN swagger generate spec -o /swagger.json \
 
 RUN cd ui && rice append --exec /TechChallengeApp
 
-FROM alpine:latest
+FROM alpine:3.18.3
 
 RUN apk add --no-cache jq
 
